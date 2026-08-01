@@ -1,0 +1,132 @@
+<div class="table-container">
+  <h2>Tabla de Escenarios</h2>
+
+  @if (tableData().length === 0) {
+    <div class="empty-state">
+      <p>No hay datos en la tabla. Agrega un país para comenzar.</p>
+    </div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th rowspan="2">País</th>
+            <th rowspan="2">Universo</th>
+            @for (platform of uniquePlatforms(); track platform) {
+              <th colspan="2" [style.background-color]="platformColors[platform] || '#e0e0e0'">
+                {{ platform }}
+              </th>
+            }
+            <th colspan="2">Cross Reach Platform</th>
+            <th rowspan="2">Acciones</th>
+          </tr>
+          <tr>
+            @for (platform of uniquePlatforms(); track platform) {
+              <th>Reach</th>
+              <th>%</th>
+            }
+            <th>% Reach</th>
+            <th>Cross Reach</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (row of tableData(); track row.id) {
+            <tr [class.editing]="editingId() === row.id">
+              @if (editingId() === row.id) {
+                <!-- Modo Edición -->
+                <td>
+                  <input
+                    type="text"
+                    [(ngModel)]="editData()!.country"
+                    (ngModelChange)="updateEditValue('country', $event)"
+                    class="edit-input"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    [(ngModel)]="editData()!.universe"
+                    (ngModelChange)="updateEditValue('universe', $event)"
+                    class="edit-input"
+                  />
+                </td>
+                @for (platform of uniquePlatforms(); track platform) {
+                  <td>
+                    <input
+                      type="number"
+                      [ngModel]="editData()!.platforms[platform] || 0"
+                      (ngModelChange)="updateEditValue('reach', $event, platform)"
+                      class="edit-input"
+                      [style.background-color]="platformColors[platform] + '40'"
+                    />
+                  </td>
+                  <td>-</td>
+                }
+                <td colspan="2" class="editing-info">Editando...</td>
+                <td class="actions-cell">
+                  <button
+                    type="button"
+                    (click)="saveEdit(row)"
+                    class="btn-save"
+                    title="Guardar"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    (click)="cancelEdit()"
+                    class="btn-cancel-edit"
+                    title="Cancelar"
+                  >
+                    ✗
+                  </button>
+                </td>
+              } @else {
+                <!-- Modo Visualización -->
+                <td>{{ row.country }}</td>
+                <td>{{ formatNumber(row.universe) }}</td>
+
+                @for (platform of uniquePlatforms(); track platform) {
+                  @let reach = getPlatformReach(row, platform);
+                  @let percentage = calculatePercentage(reach, row.universe);
+
+                  <td [style.background-color]="reach > 0 ? (platformColors[platform] + '60') : 'transparent'">
+                    {{ reach > 0 ? formatNumber(reach) : '-' }}
+                  </td>
+                  <td [style.background-color]="reach > 0 ? (platformColors[platform] + '60') : 'transparent'">
+                    {{ reach > 0 ? percentage + '%' : '-' }}
+                  </td>
+                }
+
+                <td>{{ row.crossReachPercentage ? row.crossReachPercentage + '%' : '-' }}</td>
+                <td class="cross-reach-cell">
+                  {{ row.crossReach ? formatNumber(row.crossReach) : '-' }}
+                </td>
+
+                <td class="actions-cell">
+                  <button
+                    type="button"
+                    (click)="startEdit(row)"
+                    class="btn-edit"
+                    title="Editar"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="delete(row)"
+                    class="btn-delete"
+                    title="Eliminar"
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

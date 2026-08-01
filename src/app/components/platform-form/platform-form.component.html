@@ -1,0 +1,118 @@
+<div class="form-container">
+  <h2>Ingreso de Datos</h2>
+
+  <!-- Inputs de País y Universo -->
+  <div class="form-row">
+    <div class="form-group">
+      <label for="country">País</label>
+      <input
+        type="text"
+        id="country"
+        [(ngModel)]="country"
+        placeholder="Ej: Colombia"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="universe">Universo</label>
+      <input
+        type="number"
+        id="universe"
+        [(ngModel)]="universe"
+        placeholder="Ej: 27000000"
+        class="form-input"
+        min="0"
+      />
+    </div>
+  </div>
+
+  <!-- Plataformas agregadas -->
+  <div class="platforms-section">
+    <h3>Plataformas</h3>
+
+    <div class="platforms-grid">
+      @for (platform of platforms(); track platform.platformName) {
+        <div
+          class="platform-card"
+          [style.background-color]="platformColors[platform.platformName] || '#e0e0e0'"
+        >
+          <div class="platform-header">
+            <span class="platform-name">{{ platform.platformName }}</span>
+            <button
+              type="button"
+              (click)="removePlatform(platform.platformName)"
+              class="btn-remove"
+              title="Eliminar plataforma"
+            >
+              🗑️
+            </button>
+          </div>
+
+          <div class="platform-input">
+            <label>Reach</label>
+            <input
+              type="number"
+              [(ngModel)]="platform.reach"
+              (ngModelChange)="updatePlatformReach(platform.platformName, $event)"
+              placeholder="0"
+              min="0"
+            />
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Botón para agregar plataforma -->
+    <button
+      type="button"
+      (click)="openPlatformSelector()"
+      class="btn-add-platform"
+    >
+      + Agregar Plataforma
+    </button>
+  </div>
+
+  <!-- Botón agregar a tabla -->
+  <div class="form-actions">
+    <button
+      type="button"
+      (click)="submitForm()"
+      class="btn-submit"
+    >
+      Agregar a la Tabla
+    </button>
+  </div>
+</div>
+
+<!-- Modal Selector de Plataformas -->
+@if (showPlatformSelector()) {
+  <div class="modal-overlay" (click)="showPlatformSelector.set(false)">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Selecciona una Plataforma</h3>
+
+      <div class="platform-list">
+        @for (platform of availablePlatforms(); track platform) {
+          <button
+            type="button"
+            (click)="addPlatform(platform)"
+            class="platform-option"
+            [style.border-left-color]="platformColors[platform] || '#333'"
+          >
+            {{ platform }}
+          </button>
+        } @empty {
+          <p class="no-platforms">No hay plataformas disponibles</p>
+        }
+      </div>
+
+      <button
+        type="button"
+        (click)="showPlatformSelector.set(false)"
+        class="btn-cancel"
+      >
+        Cancelar
+      </button>
+    </div>
+  </div>
+}
