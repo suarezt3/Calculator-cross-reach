@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output, signal, computed, input } from '@angul
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlatformIconComponent } from '../../shared/components/platform-icon/platform-icon.component';
+import { NumberFormatPipe } from '../../pipes/number-format.pipe';
 import {
   AVAILABLE_PLATFORMS,
   PLATFORM_COLORS,
@@ -34,6 +35,10 @@ export class PlatformFormComponent {
   platforms = signal<PlatformReach[]>([]);
   showPlatformSelector = signal<boolean>(false);
 
+  // Signals para mostrar valores formateados
+  universeDisplay = signal<string>('');
+  reachDisplays = signal<Map<string, string>>(new Map());
+
   // Países disponibles (filtrando los que ya están en la tabla)
   availableCountries = computed(() => {
     const used = this.usedCountries();
@@ -48,6 +53,62 @@ export class PlatformFormComponent {
 
   // Colores de plataformas
   platformColors = PLATFORM_COLORS;
+
+  /**
+   * Formatea un número con separación de miles
+   */
+  formatNumber(value: number | null | undefined): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return value.toLocaleString('es-CO');
+  }
+
+  /**
+   * Parsea un string formateado a número
+   */
+  parseNumber(value: string): number | null {
+    if (!value || value.trim() === '') {
+      return null;
+    }
+    const cleaned = value.replace(/\./g, '');
+    const parsed = Number(cleaned);
+    return isNaN(parsed) ? null : parsed;
+  }
+
+  /**
+   * Maneja el input del universo con formato
+   */
+  onUniverseInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.replace(/\./g, '');
+    const numValue = this.parseNumber(value);
+
+    this.universe.set(numValue);
+
+    if (numValue !== null) {
+      input.value = this.formatNumber(numValue);
+    } else {
+      input.value = '';
+    }
+  }
+
+  /**
+   * Maneja el input del reach con formato
+   */
+  onReachInput(platformName: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.replace(/\./g, '');
+    const numValue = this.parseNumber(value);
+
+    this.updatePlatformReach(platformName, numValue);
+
+    if (numValue !== null) {
+      input.value = this.formatNumber(numValue);
+    } else {
+      input.value = '';
+    }
+  }
 
   /**
    * Abre el selector de plataformas
@@ -84,11 +145,10 @@ export class PlatformFormComponent {
   /**
    * Actualiza el reach de una plataforma
    */
-  updatePlatformReach(platformName: string, reach: string): void {
-    const parsedReach = reach === '' ? null : Number(reach);
+  updatePlatformReach(platformName: string, reach: number | null): void {
     this.platforms.update(current =>
       current.map(p =>
-        p.platformName === platformName ? { ...p, reach: parsedReach } : p
+        p.platformName === platformName ? { ...p, reach } : p
       )
     );
   }

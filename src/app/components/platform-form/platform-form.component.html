@@ -20,12 +20,12 @@
     <div class="form-group">
       <label for="universe">Universo</label>
       <input
-        type="number"
+        type="text"
         id="universe"
-        [(ngModel)]="universe"
-        placeholder="Ej: 27000000"
-        class="form-input"
-        min="0"
+        [value]="universe() ? formatNumber(universe()) : ''"
+        (input)="onUniverseInput($event)"
+        placeholder="Ej: 27.000.000"
+        class="form-input number-input"
       />
     </div>
   </div>
@@ -58,11 +58,11 @@
           <div class="platform-input">
             <label>Reach</label>
             <input
-              type="number"
-              [ngModel]="platform.reach"
-              (ngModelChange)="updatePlatformReach(platform.platformName, $event)"
+              type="text"
+              [value]="platform.reach ? formatNumber(platform.reach) : ''"
+              (input)="onReachInput(platform.platformName, $event)"
               placeholder="0"
-              min="0"
+              class="number-input"
             />
           </div>
         </div>
