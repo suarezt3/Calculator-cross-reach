@@ -1,7 +1,10 @@
-import { Component, EventEmitter, Output, signal, computed } from '@angular/core';
+import { Component, EventEmitter, Output, signal, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AVAILABLE_PLATFORMS, PLATFORM_COLORS, PlatformReach } from '../../models/platform.models';
+
+// Lista de países disponibles
+export const AVAILABLE_COUNTRIES = ['Mexico', 'Colombia', 'Peru', 'Chile', 'Costa Rica'];
 
 @Component({
   selector: 'app-platform-form',
@@ -17,11 +20,20 @@ export class PlatformFormComponent {
     platforms: PlatformReach[];
   }>();
 
+  // Input signal para recibir los países ya agregados a la tabla
+  usedCountries = input<string[]>([]);
+
   // Signals para el estado del formulario
   country = signal<string>('');
   universe = signal<number>(0);
   platforms = signal<PlatformReach[]>([]);
   showPlatformSelector = signal<boolean>(false);
+
+  // Países disponibles (filtrando los que ya están en la tabla)
+  availableCountries = computed(() => {
+    const used = this.usedCountries();
+    return AVAILABLE_COUNTRIES.filter(c => !used.includes(c));
+  });
 
   // Plataformas disponibles (las que no están agregadas)
   availablePlatforms = computed(() => {
@@ -80,12 +92,12 @@ export class PlatformFormComponent {
    */
   submitForm(): void {
     if (!this.country() || this.country().trim() === '') {
-      alert('Por favor ingresa el nombre del país');
+      alert('Por favor selecciona un país');
       return;
     }
 
     if (this.universe() <= 0) {
-      alert('Por favor ingresa un universo válido mayor a 0');
+      alert('Por favor ingresa un universo válido mayor a 1');
       return;
     }
 

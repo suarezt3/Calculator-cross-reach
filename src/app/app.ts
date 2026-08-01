@@ -23,6 +23,13 @@ export class AppComponent {
   constructor(private crossReachService: CrossReachService) {}
 
   /**
+   * Obtiene la lista de países ya agregados a la tabla
+   */
+  get usedCountries(): string[] {
+    return this.tableData.map(row => row.country);
+  }
+
+  /**
    * Maneja el evento de agregar a la tabla desde el formulario
    */
   handleAddToTable(data: {

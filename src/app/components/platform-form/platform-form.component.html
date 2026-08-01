@@ -5,13 +5,16 @@
   <div class="form-row">
     <div class="form-group">
       <label for="country">País</label>
-      <input
-        type="text"
+      <select
         id="country"
         [(ngModel)]="country"
-        placeholder="Ej: Colombia"
-        class="form-input"
-      />
+        class="form-select"
+      >
+        <option value="" disabled>Selecciona un país</option>
+        @for (c of availableCountries(); track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
     </div>
 
     <div class="form-group">
@@ -20,9 +23,9 @@
         type="number"
         id="universe"
         [(ngModel)]="universe"
-        placeholder="Ej: 27000000"
+        placeholder="0"
         class="form-input"
-        min="0"
+        min="1"
       />
     </div>
   </div>
@@ -69,7 +72,7 @@
       (click)="openPlatformSelector()"
       class="btn-add-platform"
     >
-      + Agregar Plataforma
+      + Agregar canal
     </button>
   </div>
 
@@ -80,7 +83,7 @@
       (click)="submitForm()"
       class="btn-submit"
     >
-      Agregar a la Tabla
+      Agregar datos
     </button>
   </div>
 </div>
