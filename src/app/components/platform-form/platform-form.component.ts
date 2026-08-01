@@ -1,7 +1,12 @@
 import { Component, EventEmitter, Output, signal, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AVAILABLE_PLATFORMS, PLATFORM_COLORS, PlatformReach } from '../../models/platform.models';
+import { PlatformIconComponent } from '../../shared/components/platform-icon/platform-icon.component';
+import {
+  AVAILABLE_PLATFORMS,
+  PLATFORM_COLORS,
+  PlatformReach
+} from '../../models/platform.models';
 
 // Lista de países disponibles
 export const AVAILABLE_COUNTRIES = ['Mexico', 'Colombia', 'Peru', 'Chile', 'Costa Rica'];
@@ -9,7 +14,7 @@ export const AVAILABLE_COUNTRIES = ['Mexico', 'Colombia', 'Peru', 'Chile', 'Cost
 @Component({
   selector: 'app-platform-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PlatformIconComponent],
   templateUrl: './platform-form.component.html',
   styleUrls: ['./platform-form.component.scss']
 })
@@ -25,7 +30,7 @@ export class PlatformFormComponent {
 
   // Signals para el estado del formulario
   country = signal<string>('');
-  universe = signal<number>(0);
+  universe = signal<number | null>(null);
   platforms = signal<PlatformReach[]>([]);
   showPlatformSelector = signal<boolean>(false);
 
@@ -61,7 +66,7 @@ export class PlatformFormComponent {
   addPlatform(platformName: string): void {
     const newPlatform: PlatformReach = {
       platformName,
-      reach: 0
+      reach: null
     };
     this.platforms.update(current => [...current, newPlatform]);
     this.showPlatformSelector.set(false);
@@ -79,10 +84,11 @@ export class PlatformFormComponent {
   /**
    * Actualiza el reach de una plataforma
    */
-  updatePlatformReach(platformName: string, reach: number): void {
+  updatePlatformReach(platformName: string, reach: string): void {
+    const parsedReach = reach === '' ? null : Number(reach);
     this.platforms.update(current =>
       current.map(p =>
-        p.platformName === platformName ? { ...p, reach } : p
+        p.platformName === platformName ? { ...p, reach: parsedReach } : p
       )
     );
   }
@@ -96,8 +102,8 @@ export class PlatformFormComponent {
       return;
     }
 
-    if (this.universe() <= 0) {
-      alert('Por favor ingresa un universo válido mayor a 1');
+    if (!this.universe() || this.universe()! <= 0) {
+      alert('Por favor ingresa un universo válido mayor a 0');
       return;
     }
 
@@ -106,7 +112,7 @@ export class PlatformFormComponent {
       return;
     }
 
-    const hasValidReach = this.platforms().some(p => p.reach > 0);
+    const hasValidReach = this.platforms().some(p => p.reach !== null && p.reach! > 0);
     if (!hasValidReach) {
       alert('Por favor ingresa el reach de al menos una plataforma');
       return;
@@ -114,7 +120,7 @@ export class PlatformFormComponent {
 
     this.addToTable.emit({
       country: this.country().trim(),
-      universe: this.universe(),
+      universe: this.universe()!,
       platforms: this.platforms()
     });
 
@@ -127,7 +133,7 @@ export class PlatformFormComponent {
    */
   clearForm(): void {
     this.country.set('');
-    this.universe.set(0);
+    this.universe.set(null);
     this.platforms.set([]);
     this.showPlatformSelector.set(false);
   }

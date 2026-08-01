@@ -23,9 +23,9 @@
         type="number"
         id="universe"
         [(ngModel)]="universe"
-        placeholder="0"
+        placeholder="Ej: 27000000"
         class="form-input"
-        min="1"
+        min="0"
       />
     </div>
   </div>
@@ -41,7 +41,10 @@
           [style.background-color]="platformColors[platform.platformName] || '#e0e0e0'"
         >
           <div class="platform-header">
-            <span class="platform-name">{{ platform.platformName }}</span>
+            <!-- Icono de la plataforma -->
+            <div class="platform-icon-wrapper">
+              <app-platform-icon [platformName]="platform.platformName"></app-platform-icon>
+            </div>
             <button
               type="button"
               (click)="removePlatform(platform.platformName)"
@@ -56,7 +59,7 @@
             <label>Reach</label>
             <input
               type="number"
-              [(ngModel)]="platform.reach"
+              [ngModel]="platform.reach"
               (ngModelChange)="updatePlatformReach(platform.platformName, $event)"
               placeholder="0"
               min="0"
@@ -72,7 +75,7 @@
       (click)="openPlatformSelector()"
       class="btn-add-platform"
     >
-      + Agregar canal
+      + Agregar Plataforma
     </button>
   </div>
 
@@ -83,7 +86,7 @@
       (click)="submitForm()"
       class="btn-submit"
     >
-      Agregar datos
+      Agregar a la Tabla
     </button>
   </div>
 </div>
@@ -102,7 +105,10 @@
             class="platform-option"
             [style.border-left-color]="platformColors[platform] || '#333'"
           >
-            {{ platform }}
+            <div class="platform-option-icon">
+              <app-platform-icon [platformName]="platform"></app-platform-icon>
+            </div>
+            <span>{{ platform }}</span>
           </button>
         } @empty {
           <p class="no-platforms">No hay plataformas disponibles</p>
@@ -114,7 +120,7 @@
         (click)="showPlatformSelector.set(false)"
         class="btn-cancel"
       >
-        Cancelar
+        ✗ Cancelar
       </button>
     </div>
   </div>

@@ -13,7 +13,7 @@
             <th rowspan="2">País</th>
             <th rowspan="2">Universo</th>
             @for (platform of uniquePlatforms(); track platform) {
-              <th colspan="2" [style.background-color]="platformColors[platform] || '#e0e0e0'">
+              <th class="Plataforma" colspan="2" [style.background-color]="platformColors[platform] || '#e0e0e0'">
                 {{ platform }}
               </th>
             }
@@ -85,11 +85,11 @@
               } @else {
                 <!-- Modo Visualización -->
                 <td>{{ row.country }}</td>
-                <td>{{ formatNumber(row.universe) }}</td>
+               <td>{{ formatNumber(row.universe) }}</td>
 
                 @for (platform of uniquePlatforms(); track platform) {
                   @let reach = getPlatformReach(row, platform);
-                  @let percentage = calculatePercentage(reach, row.universe);
+                 @let percentage = calculatePercentage(reach, row.universe ?? 0);
 
                   <td [style.background-color]="reach > 0 ? (platformColors[platform] + '60') : 'transparent'">
                     {{ reach > 0 ? formatNumber(reach) : '-' }}

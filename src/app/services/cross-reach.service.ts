@@ -17,17 +17,17 @@ export class CrossReachService {
       return { crossReach: 0, percentage: 0 };
     }
 
-    // Ordenar platforms por reach de mayor a menor
+    // Ordenar platforms por reach de mayor a menor (filtrando nulls)
     const sortedPlatforms = [...platforms]
-      .filter(p => p.reach > 0)
-      .sort((a, b) => b.reach - a.reach);
+      .filter(p => (p.reach ?? 0) > 0)
+      .sort((a, b) => (b.reach ?? 0) - (a.reach ?? 0));
 
     if (sortedPlatforms.length === 0) {
       return { crossReach: 0, percentage: 0 };
     }
 
     // Convertir reaches a porcentajes (0-1)
-    const reaches = sortedPlatforms.map(p => p.reach / universe);
+    const reaches = sortedPlatforms.map(p => (p.reach ?? 0) / universe);
 
     // Aplicar fórmula de Sainsbury iterativamente
     let cumulativeReach = reaches[0];
@@ -54,7 +54,7 @@ export class CrossReachService {
    * Agrega una fila a la tabla calculando el cross reach
    */
   addRowToTable(rows: CountryRow[], newRow: CountryRow): CountryRow[] {
-    const calculation = this.calculateCrossReach(newRow.platforms, newRow.universe);
+    const calculation = this.calculateCrossReach(newRow.platforms, newRow.universe ?? 0);
 
     const rowWithCalculation: CountryRow = {
       ...newRow,
@@ -69,7 +69,7 @@ export class CrossReachService {
    * Actualiza una fila existente
    */
   updateRowInTable(rows: CountryRow[], updatedRow: CountryRow): CountryRow[] {
-    const calculation = this.calculateCrossReach(updatedRow.platforms, updatedRow.universe);
+    const calculation = this.calculateCrossReach(updatedRow.platforms, updatedRow.universe ?? 0);
 
     const rowWithCalculation: CountryRow = {
       ...updatedRow,

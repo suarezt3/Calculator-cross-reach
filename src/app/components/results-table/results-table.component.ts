@@ -46,7 +46,7 @@ export class ResultsTableComponent {
    */
   getPlatformReach(row: CountryRow, platformName: string): number {
     const platform = row.platforms.find(p => p.platformName === platformName);
-    return platform?.reach || 0;
+    return platform?.reach ?? 0;
   }
 
   /**
@@ -65,12 +65,12 @@ export class ResultsTableComponent {
 
     const platformsData: { [key: string]: number } = {};
     row.platforms.forEach(p => {
-      platformsData[p.platformName] = p.reach;
+      platformsData[p.platformName] = p.reach ?? 0;
     });
 
     this.editData.set({
       country: row.country,
-      universe: row.universe,
+      universe: row.universe ?? 0,
       platforms: platformsData
     });
   }
@@ -140,7 +140,8 @@ export class ResultsTableComponent {
   /**
    * Formatea números con puntos de mil
    */
-  formatNumber(num: number): string {
+  formatNumber(num: number | null | undefined): string {
+    if (!num) return '-';
     return num.toLocaleString('es-CO');
   }
 }
