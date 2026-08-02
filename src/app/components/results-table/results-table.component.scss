@@ -133,3 +133,40 @@
     color: #666;
   }
 }
+
+// Estilos para filas de mercado
+.market-row {
+  background: linear-gradient(90deg, #fff9e6 0%, #fff 100%);
+  font-weight: 600;
+
+  &:hover {
+    background: linear-gradient(90deg, #fff9e6 0%, #fff 100%);
+  }
+
+  .market-label {
+    font-weight: 700;
+    color: #d4a017;
+  }
+
+  .market-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: #ffd700;
+    color: #333;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+.readonly-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #e0e0e0;
+  color: #666;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: not-allowed;
+}

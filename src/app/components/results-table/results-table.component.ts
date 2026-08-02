@@ -61,6 +61,11 @@ export class ResultsTableComponent {
    * Inicia la edición de una fila
    */
   startEdit(row: CountryRow): void {
+    // No permitir editar mercados
+    if (row.isMarket) {
+      return;
+    }
+
     this.editingId.set(row.id);
 
     const platformsData: { [key: string]: number } = {};
@@ -112,6 +117,11 @@ export class ResultsTableComponent {
    * Elimina una fila
    */
   delete(row: CountryRow): void {
+    // No permitir eliminar mercados
+    if (row.isMarket) {
+      return;
+    }
+
     if (confirm(`¿Estás seguro de eliminar la fila de ${row.country}?`)) {
       this.deleteRow.emit(row.id);
     }
@@ -143,5 +153,12 @@ export class ResultsTableComponent {
   formatNumber(num: number | null | undefined): string {
     if (!num) return '-';
     return num.toLocaleString('es-CO');
+  }
+
+  /**
+   * Verifica si una fila es un mercado (solo lectura)
+   */
+  isMarket(row: CountryRow): boolean {
+    return row.isMarket ?? false;
   }
 }

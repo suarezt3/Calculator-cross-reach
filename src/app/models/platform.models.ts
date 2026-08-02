@@ -10,6 +10,7 @@ export interface CountryRow {
   platforms: PlatformReach[];
   crossReach?: number;
   crossReachPercentage?: number;
+  isMarket?: boolean; // Indica si es un mercado calculado (Casaca/Latam)
 }
 
 export const AVAILABLE_PLATFORMS = [

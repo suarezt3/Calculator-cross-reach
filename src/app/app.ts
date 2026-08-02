@@ -22,16 +22,17 @@ export class AppComponent {
 
   constructor(private crossReachService: CrossReachService) {}
 
-  /**
-   * Obtiene la lista de países ya agregados a la tabla
-   */
   get usedCountries(): string[] {
-    return this.tableData.map(row => row.country);
+    return this.tableData
+      .filter(row => !row.isMarket)
+      .map(row => row.country);
   }
 
-  /**
-   * Maneja el evento de agregar a la tabla desde el formulario
-   */
+  // ESTE ES EL GETTER CLAVE
+  get displayData(): CountryRow[] {
+    return this.crossReachService.getAllRowsWithMarkets(this.tableData);
+  }
+
   handleAddToTable(data: {
     country: string;
     universe: number;
@@ -47,16 +48,13 @@ export class AppComponent {
     this.tableData = this.crossReachService.addRowToTable(this.tableData, newRow);
   }
 
-  /**
-   * Maneja la edición de una fila
-   */
   handleEditRow(updatedRow: CountryRow): void {
+    if (updatedRow.isMarket) {
+      return;
+    }
     this.tableData = this.crossReachService.updateRowInTable(this.tableData, updatedRow);
   }
 
-  /**
-   * Maneja la eliminación de una fila
-   */
   handleDeleteRow(id: string): void {
     this.tableData = this.crossReachService.deleteRowFromTable(this.tableData, id);
   }

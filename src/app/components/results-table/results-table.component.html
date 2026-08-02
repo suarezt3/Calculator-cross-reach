@@ -13,7 +13,7 @@
             <th rowspan="2">País</th>
             <th rowspan="2">Universo</th>
             @for (platform of uniquePlatforms(); track platform) {
-              <th class="Plataforma" colspan="2" [style.background-color]="platformColors[platform] || '#e0e0e0'">
+              <th colspan="2" [style.background-color]="platformColors[platform] || '#e0e0e0'">
                 {{ platform }}
               </th>
             }
@@ -32,7 +32,10 @@
 
         <tbody>
           @for (row of tableData(); track row.id) {
-            <tr [class.editing]="editingId() === row.id">
+            <tr
+              [class.editing]="editingId() === row.id"
+              [class.market-row]="isMarket(row)"
+            >
               @if (editingId() === row.id) {
                 <!-- Modo Edición -->
                 <td>
@@ -45,7 +48,7 @@
                 </td>
                 <td>
                   <input
-                    type="number"
+                    type="text"
                     [(ngModel)]="editData()!.universe"
                     (ngModelChange)="updateEditValue('universe', $event)"
                     class="edit-input"
@@ -54,8 +57,8 @@
                 @for (platform of uniquePlatforms(); track platform) {
                   <td>
                     <input
-                      type="number"
-                      [ngModel]="editData()!.platforms[platform] || 0"
+                      type="text"
+                      [ngModel]="editData()!.platforms[platform] ? (editData()!.platforms[platform] | number:'1.0-0':'es-CO') : '0'"
                       (ngModelChange)="updateEditValue('reach', $event, platform)"
                       class="edit-input"
                       [style.background-color]="platformColors[platform] + '40'"
@@ -84,12 +87,17 @@
                 </td>
               } @else {
                 <!-- Modo Visualización -->
-                <td>{{ row.country }}</td>
-               <td>{{ formatNumber(row.universe) }}</td>
+                <td [class.market-label]="isMarket(row)">
+                    @if (isMarket(row)) {
+                    <span class="market-badge">Mercado</span>
+                  }
+                  {{ row.country }}
+                </td>
+                <td>{{ formatNumber(row.universe) }}</td>
 
                 @for (platform of uniquePlatforms(); track platform) {
                   @let reach = getPlatformReach(row, platform);
-                 @let percentage = calculatePercentage(reach, row.universe ?? 0);
+                  @let percentage = calculatePercentage(reach, row.universe ?? 0);
 
                   <td [style.background-color]="reach > 0 ? (platformColors[platform] + '60') : 'transparent'">
                     {{ reach > 0 ? formatNumber(reach) : '-' }}
@@ -105,22 +113,26 @@
                 </td>
 
                 <td class="actions-cell">
-                  <button
-                    type="button"
-                    (click)="startEdit(row)"
-                    class="btn-edit"
-                    title="Editar"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    (click)="delete(row)"
-                    class="btn-delete"
-                    title="Eliminar"
-                  >
-                    Eliminar
-                  </button>
+                  @if (!isMarket(row)) {
+                    <button
+                      type="button"
+                      (click)="startEdit(row)"
+                      class="btn-edit"
+                      title="Editar"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      (click)="delete(row)"
+                      class="btn-delete"
+                      title="Eliminar"
+                    >
+                      Eliminar
+                    </button>
+                  } @else {
+                    <span class="readonly-badge">Solo Lectura</span>
+                  }
                 </td>
               }
             </tr>
