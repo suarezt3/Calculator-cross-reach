@@ -33,35 +33,22 @@ export class ResultsTableComponent {
 
   constructor(private crossReachService: CrossReachService) {}
 
-  /**
-   * Actualiza la lista de plataformas únicas
-   */
   private updateUniquePlatforms(): void {
     const platforms = this.crossReachService.getAllUniquePlatforms(this.tableData());
     this.uniquePlatforms.set(platforms);
   }
 
-  /**
-   * Obtiene el reach de una plataforma para una fila
-   */
   getPlatformReach(row: CountryRow, platformName: string): number {
     const platform = row.platforms.find(p => p.platformName === platformName);
     return platform?.reach ?? 0;
   }
 
-  /**
-   * Calcula el porcentaje de reach
-   */
   calculatePercentage(reach: number, universe: number): number {
     if (universe === 0) return 0;
     return parseFloat(((reach / universe) * 100).toFixed(2));
   }
 
-  /**
-   * Inicia la edición de una fila
-   */
   startEdit(row: CountryRow): void {
-    // No permitir editar mercados
     if (row.isMarket) {
       return;
     }
@@ -80,17 +67,11 @@ export class ResultsTableComponent {
     });
   }
 
-  /**
-   * Cancela la edición
-   */
   cancelEdit(): void {
     this.editingId.set(null);
     this.editData.set(null);
   }
 
-  /**
-   * Guarda los cambios de la fila editada
-   */
   saveEdit(row: CountryRow): void {
     const editData = this.editData();
     if (!editData) return;
@@ -113,11 +94,7 @@ export class ResultsTableComponent {
     this.cancelEdit();
   }
 
-  /**
-   * Elimina una fila
-   */
   delete(row: CountryRow): void {
-    // No permitir eliminar mercados
     if (row.isMarket) {
       return;
     }
@@ -127,9 +104,6 @@ export class ResultsTableComponent {
     }
   }
 
-  /**
-   * Actualiza un valor durante la edición
-   */
   updateEditValue(field: string, value: string | number, platformName?: string): void {
     const current = this.editData();
     if (!current) return;
@@ -147,18 +121,54 @@ export class ResultsTableComponent {
     this.editData.set({ ...current });
   }
 
-  /**
-   * Formatea números con puntos de mil
-   */
   formatNumber(num: number | null | undefined): string {
-    if (!num) return '-';
+    if (!num) return '';
     return num.toLocaleString('es-CO');
   }
 
-  /**
-   * Verifica si una fila es un mercado (solo lectura)
-   */
+  parseNumber(value: string): number {
+    if (!value || value.trim() === '') {
+      return 0;
+    }
+    const cleaned = value.replace(/\./g, '');
+    const parsed = Number(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  onEditUniverseInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.replace(/\./g, '');
+    const numValue = this.parseNumber(value);
+
+    if (this.editData()) {
+      this.editData()!.universe = numValue;
+      this.editData.set({ ...this.editData()! });
+    }
+
+    input.value = this.formatNumber(numValue);
+  }
+
+  onEditReachInput(platformName: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.replace(/\./g, '');
+    const numValue = this.parseNumber(value);
+
+    if (this.editData()) {
+      this.editData()!.platforms[platformName] = numValue;
+      this.editData.set({ ...this.editData()! });
+    }
+
+    input.value = this.formatNumber(numValue);
+  }
+
   isMarket(row: CountryRow): boolean {
     return row.isMarket ?? false;
   }
+
+/**
+ * Obtiene el reach de una plataforma en modo edición de forma segura
+ */
+getEditPlatformReach(platformName: string): number {
+  return this.editData()?.platforms[platformName] ?? 0;
+}
 }

@@ -41,27 +41,31 @@
                 <td>
                   <input
                     type="text"
-                    [(ngModel)]="editData()!.country"
-                    (ngModelChange)="updateEditValue('country', $event)"
-                    class="edit-input"
+                    [value]="editData()?.country"
+                    class="edit-input country-input"
+                    readonly
+                    disabled
                   />
                 </td>
                 <td>
                   <input
                     type="text"
-                    [(ngModel)]="editData()!.universe"
-                    (ngModelChange)="updateEditValue('universe', $event)"
-                    class="edit-input"
+                    [value]="editData()?.universe ? formatNumber(editData()!.universe) : ''"
+                    (input)="onEditUniverseInput($event)"
+                    class="edit-input number-input"
+                    placeholder="0"
                   />
                 </td>
                 @for (platform of uniquePlatforms(); track platform) {
                   <td>
                     <input
                       type="text"
-                      [ngModel]="editData()!.platforms[platform] ? (editData()!.platforms[platform] | number:'1.0-0':'es-CO') : '0'"
-                      (ngModelChange)="updateEditValue('reach', $event, platform)"
-                      class="edit-input"
+                     [value]="getEditPlatformReach(platform) > 0 ? formatNumber(getEditPlatformReach(platform)) : ''"
+(input)="onEditReachInput(platform, $event)"
+                      (input)="onEditReachInput(platform, $event)"
+                      class="edit-input number-input"
                       [style.background-color]="platformColors[platform] + '40'"
+                      placeholder="0"
                     />
                   </td>
                   <td>-</td>
