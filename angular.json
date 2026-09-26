@@ -27,6 +27,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
               }
             ],
             "styles": [
@@ -59,6 +64,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "port": 3000,
+            "host": "0.0.0.0"
+          },
           "configurations": {
             "production": {
               "buildTarget": "cross-reach-calculator:build:production"

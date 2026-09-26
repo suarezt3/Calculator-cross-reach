@@ -7,7 +7,8 @@
       <label for="country">País</label>
       <select
         id="country"
-        [(ngModel)]="country"
+        [ngModel]="country()"
+        (ngModelChange)="onCountrySelect($event)"
         class="form-select"
       >
         <option value="" disabled>Selecciona un país</option>
@@ -78,6 +79,13 @@
       + Agregar Plataforma
     </button>
   </div>
+
+  <!-- Mensaje de validación -->
+  @if (errorMessage()) {
+    <div class="form-error" role="alert">
+      <span>⚠️ {{ errorMessage() }}</span>
+    </div>
+  }
 
   <!-- Botón agregar a tabla -->
   <div class="form-actions">

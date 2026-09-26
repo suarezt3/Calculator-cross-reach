@@ -99,9 +99,18 @@ export class ResultsTableComponent {
       return;
     }
 
-    if (confirm(`¿Estás seguro de eliminar la fila de ${row.country}?`)) {
-      this.deleteRow.emit(row.id);
+    try {
+      if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+        const confirmed = window.confirm(`¿Estás seguro de eliminar la fila de ${row.country}?`);
+        if (!confirmed) {
+          return;
+        }
+      }
+    } catch {
+      // Fallback if confirm is restricted by iframe sandbox
     }
+
+    this.deleteRow.emit(row.id);
   }
 
   updateEditValue(field: string, value: string | number, platformName?: string): void {

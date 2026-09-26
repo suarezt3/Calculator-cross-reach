@@ -1,0 +1,8 @@
+{
+  "name": "Cross Reach Calculator",
+  "description": "Cross-platform advertising reach calculator for marketing channels and countries using the Sainsbury formula.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

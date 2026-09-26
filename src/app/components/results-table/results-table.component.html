@@ -60,8 +60,7 @@
                   <td>
                     <input
                       type="text"
-                     [value]="getEditPlatformReach(platform) > 0 ? formatNumber(getEditPlatformReach(platform)) : ''"
-(input)="onEditReachInput(platform, $event)"
+                      [value]="getEditPlatformReach(platform) > 0 ? formatNumber(getEditPlatformReach(platform)) : ''"
                       (input)="onEditReachInput(platform, $event)"
                       class="edit-input number-input"
                       [style.background-color]="platformColors[platform] + '40'"

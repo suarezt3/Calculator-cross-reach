@@ -34,6 +34,7 @@ export class PlatformFormComponent {
   universe = signal<number | null>(null);
   platforms = signal<PlatformReach[]>([]);
   showPlatformSelector = signal<boolean>(false);
+  errorMessage = signal<string | null>(null);
 
   // Signals para mostrar valores formateados
   universeDisplay = signal<string>('');
@@ -111,13 +112,22 @@ export class PlatformFormComponent {
   }
 
   /**
+   * Maneja el cambio de selección de país
+   */
+  onCountrySelect(value: string): void {
+    this.country.set(value);
+    this.errorMessage.set(null);
+  }
+
+  /**
    * Abre el selector de plataformas
    */
   openPlatformSelector(): void {
     if (this.availablePlatforms().length === 0) {
-      alert('Ya agregaste todas las plataformas disponibles');
+      this.errorMessage.set('Ya agregaste todas las plataformas disponibles');
       return;
     }
+    this.errorMessage.set(null);
     this.showPlatformSelector.set(true);
   }
 
@@ -131,6 +141,7 @@ export class PlatformFormComponent {
     };
     this.platforms.update(current => [...current, newPlatform]);
     this.showPlatformSelector.set(false);
+    this.errorMessage.set(null);
   }
 
   /**
@@ -140,12 +151,14 @@ export class PlatformFormComponent {
     this.platforms.update(current =>
       current.filter(p => p.platformName !== platformName)
     );
+    this.errorMessage.set(null);
   }
 
   /**
    * Actualiza el reach de una plataforma
    */
   updatePlatformReach(platformName: string, reach: number | null): void {
+    this.errorMessage.set(null);
     this.platforms.update(current =>
       current.map(p =>
         p.platformName === platformName ? { ...p, reach } : p
@@ -158,25 +171,27 @@ export class PlatformFormComponent {
    */
   submitForm(): void {
     if (!this.country() || this.country().trim() === '') {
-      alert('Por favor selecciona un país');
+      this.errorMessage.set('Por favor selecciona un país');
       return;
     }
 
     if (!this.universe() || this.universe()! <= 0) {
-      alert('Por favor ingresa un universo válido mayor a 0');
+      this.errorMessage.set('Por favor ingresa un universo válido mayor a 0');
       return;
     }
 
     if (this.platforms().length === 0) {
-      alert('Por favor agrega al menos una plataforma');
+      this.errorMessage.set('Por favor agrega al menos una plataforma');
       return;
     }
 
     const hasValidReach = this.platforms().some(p => p.reach !== null && p.reach! > 0);
     if (!hasValidReach) {
-      alert('Por favor ingresa el reach de al menos una plataforma');
+      this.errorMessage.set('Por favor ingresa el reach de al menos una plataforma');
       return;
     }
+
+    this.errorMessage.set(null);
 
     this.addToTable.emit({
       country: this.country().trim(),
@@ -196,6 +211,7 @@ export class PlatformFormComponent {
     this.universe.set(null);
     this.platforms.set([]);
     this.showPlatformSelector.set(false);
+    this.errorMessage.set(null);
   }
 
   /**

@@ -196,6 +196,19 @@
   }
 }
 
+.form-error {
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
 .form-actions {
   margin-top: 20px;
 }
