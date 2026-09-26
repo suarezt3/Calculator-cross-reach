@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlatformFormComponent } from './components/platform-form/platform-form.component';
 import { ResultsTableComponent } from './components/results-table/results-table.component';
+import { KpiSummaryComponent } from './components/kpi-summary/kpi-summary.component';
 import { CrossReachService } from './services/cross-reach.service';
-import { CountryRow, PlatformReach } from './models/platform.models';
+import { CountryRow, PlatformReach, KpiSummary } from './models/platform.models';
 
 @Component({
   selector: 'app-root',
@@ -11,26 +12,94 @@ import { CountryRow, PlatformReach } from './models/platform.models';
   imports: [
     CommonModule,
     PlatformFormComponent,
-    ResultsTableComponent
+    ResultsTableComponent,
+    KpiSummaryComponent
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']
 })
 export class AppComponent {
-  title = 'Cross Reach Calculator';
-  tableData: CountryRow[] = [];
+  title = 'Cross Reach Enterprise Studio';
+  subtitle = 'Multi-Platform Audience Deduplication & Sainsbury Media Planning Matrix';
 
-  constructor(private crossReachService: CrossReachService) {}
+  // Inicia limpio para pruebas directas del usuario
+  tableData = signal<CountryRow[]>([]);
 
-  get usedCountries(): string[] {
-    return this.tableData
-      .filter(row => !row.isMarket)
-      .map(row => row.country);
+  constructor(public crossReachService: CrossReachService) {
+    // Inicialización limpia
   }
 
-  // ESTE ES EL GETTER CLAVE
-  get displayData(): CountryRow[] {
-    return this.crossReachService.getAllRowsWithMarkets(this.tableData);
+  usedCountries = computed(() => {
+    return this.tableData()
+      .filter(row => !row.isMarket)
+      .map(row => row.country);
+  });
+
+  displayData = computed(() => {
+    return this.crossReachService.getAllRowsWithMarkets(this.tableData());
+  });
+
+  kpiSummary = computed<KpiSummary>(() => {
+    return this.crossReachService.calculateKpiSummary(this.tableData());
+  });
+
+  /**
+   * Carga dataset demo de prueba con Meta, YouTube, TikTok y Display
+   */
+  loadInitialDemoData(): void {
+    const demoCountries: { country: string; universe: number; platforms: PlatformReach[] }[] = [
+      {
+        country: 'Mexico',
+        universe: 92000000,
+        platforms: [
+          { platformName: 'Meta', reach: 78000000 },
+          { platformName: 'YouTube', reach: 64000000 },
+          { platformName: 'TikTok', reach: 38000000 },
+          { platformName: 'Display', reach: 25000000 }
+        ]
+      },
+      {
+        country: 'Colombia',
+        universe: 39500000,
+        platforms: [
+          { platformName: 'Meta', reach: 33500000 },
+          { platformName: 'YouTube', reach: 28000000 },
+          { platformName: 'TikTok', reach: 18000000 },
+          { platformName: 'Display', reach: 14000000 }
+        ]
+      },
+      {
+        country: 'Chile',
+        universe: 16800000,
+        platforms: [
+          { platformName: 'Meta', reach: 14200000 },
+          { platformName: 'YouTube', reach: 13500000 },
+          { platformName: 'TikTok', reach: 9800000 }
+        ]
+      },
+      {
+        country: 'Peru',
+        universe: 24500000,
+        platforms: [
+          { platformName: 'Meta', reach: 21000000 },
+          { platformName: 'YouTube', reach: 17500000 },
+          { platformName: 'TikTok', reach: 12800000 }
+        ]
+      }
+    ];
+
+    let currentTable: CountryRow[] = [];
+    demoCountries.forEach(data => {
+      const row: CountryRow = {
+        id: crypto.randomUUID(),
+        country: data.country,
+        universe: data.universe,
+        platforms: data.platforms
+      };
+      currentTable = this.crossReachService.addRowToTable(currentTable, row);
+    });
+
+    this.tableData.set(currentTable);
   }
 
   handleAddToTable(data: {
@@ -45,17 +114,22 @@ export class AppComponent {
       platforms: data.platforms
     };
 
-    this.tableData = this.crossReachService.addRowToTable(this.tableData, newRow);
+    const updated = this.crossReachService.addRowToTable(this.tableData(), newRow);
+    this.tableData.set(updated);
   }
 
   handleEditRow(updatedRow: CountryRow): void {
-    if (updatedRow.isMarket) {
-      return;
-    }
-    this.tableData = this.crossReachService.updateRowInTable(this.tableData, updatedRow);
+    if (updatedRow.isMarket) return;
+    const updated = this.crossReachService.updateRowInTable(this.tableData(), updatedRow);
+    this.tableData.set(updated);
   }
 
   handleDeleteRow(id: string): void {
-    this.tableData = this.crossReachService.deleteRowFromTable(this.tableData, id);
+    const updated = this.crossReachService.deleteRowFromTable(this.tableData(), id);
+    this.tableData.set(updated);
+  }
+
+  handleResetTable(): void {
+    this.tableData.set([]);
   }
 }

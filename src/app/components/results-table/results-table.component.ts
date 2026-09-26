@@ -1,13 +1,14 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CountryRow, PlatformReach, PLATFORM_COLORS } from '../../models/platform.models';
+import { CountryRow, PlatformReach, PLATFORM_COLORS, PLATFORM_BG_TINTS } from '../../models/platform.models';
 import { CrossReachService } from '../../services/cross-reach.service';
+import { PlatformIconComponent } from '../../shared/components/platform-icon/platform-icon.component';
 
 @Component({
   selector: 'app-results-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PlatformIconComponent],
   templateUrl: './results-table.component.html',
   styleUrls: ['./results-table.component.scss']
 })
@@ -23,6 +24,8 @@ export class ResultsTableComponent {
   tableData = signal<CountryRow[]>([]);
   uniquePlatforms = signal<string[]>([]);
   editingId = signal<string | null>(null);
+  searchTerm = signal<string>('');
+
   editData = signal<{
     country: string;
     universe: number;
@@ -30,8 +33,16 @@ export class ResultsTableComponent {
   } | null>(null);
 
   platformColors = PLATFORM_COLORS;
+  platformBgTints = PLATFORM_BG_TINTS;
 
-  constructor(private crossReachService: CrossReachService) {}
+  filteredRows = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const rows = this.tableData();
+    if (!term) return rows;
+    return rows.filter(r => r.country.toLowerCase().includes(term));
+  });
+
+  constructor(public crossReachService: CrossReachService) {}
 
   private updateUniquePlatforms(): void {
     const platforms = this.crossReachService.getAllUniquePlatforms(this.tableData());
@@ -44,14 +55,16 @@ export class ResultsTableComponent {
   }
 
   calculatePercentage(reach: number, universe: number): number {
-    if (universe === 0) return 0;
+    if (!universe || universe === 0) return 0;
     return parseFloat(((reach / universe) * 100).toFixed(2));
   }
 
+  getGrossReachSum(row: CountryRow): number {
+    return row.platforms.reduce((sum, p) => sum + (p.reach ?? 0), 0);
+  }
+
   startEdit(row: CountryRow): void {
-    if (row.isMarket) {
-      return;
-    }
+    if (row.isMarket) return;
 
     this.editingId.set(row.id);
 
@@ -94,90 +107,64 @@ export class ResultsTableComponent {
     this.cancelEdit();
   }
 
-  delete(row: CountryRow): void {
-    if (row.isMarket) {
-      return;
+  /**
+   * Elimina directamente la fila seleccionada (sin bloqueos de window.confirm)
+   */
+  delete(row: CountryRow, event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
-
-    try {
-      if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
-        const confirmed = window.confirm(`¿Estás seguro de eliminar la fila de ${row.country}?`);
-        if (!confirmed) {
-          return;
-        }
-      }
-    } catch {
-      // Fallback if confirm is restricted by iframe sandbox
-    }
+    if (row.isMarket) return;
 
     this.deleteRow.emit(row.id);
   }
 
-  updateEditValue(field: string, value: string | number, platformName?: string): void {
-    const current = this.editData();
-    if (!current) return;
-
-    if (platformName) {
-      current.platforms[platformName] = Number(value);
-    } else {
-      if (field === 'country') {
-        current.country = String(value);
-      } else if (field === 'universe') {
-        current.universe = Number(value);
-      }
-    }
-
-    this.editData.set({ ...current });
-  }
-
   formatNumber(num: number | null | undefined): string {
-    if (!num) return '';
+    if (num === null || num === undefined) return '0';
     return num.toLocaleString('es-CO');
   }
 
   parseNumber(value: string): number {
-    if (!value || value.trim() === '') {
-      return 0;
-    }
-    const cleaned = value.replace(/\./g, '');
+    if (!value || value.trim() === '') return 0;
+    const cleaned = value.replace(/\D/g, '');
     const parsed = Number(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   }
 
   onEditUniverseInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const value = input.value.replace(/\./g, '');
-    const numValue = this.parseNumber(value);
+    const numValue = this.parseNumber(input.value);
 
     if (this.editData()) {
       this.editData()!.universe = numValue;
       this.editData.set({ ...this.editData()! });
     }
 
-    input.value = this.formatNumber(numValue);
+    input.value = numValue ? this.formatNumber(numValue) : '';
   }
 
   onEditReachInput(platformName: string, event: Event): void {
     const input = event.target as HTMLInputElement;
-    const value = input.value.replace(/\./g, '');
-    const numValue = this.parseNumber(value);
+    const numValue = this.parseNumber(input.value);
 
     if (this.editData()) {
       this.editData()!.platforms[platformName] = numValue;
       this.editData.set({ ...this.editData()! });
     }
 
-    input.value = this.formatNumber(numValue);
+    input.value = numValue ? this.formatNumber(numValue) : '';
+  }
+
+  getEditPlatformReach(platformName: string): number {
+    return this.editData()?.platforms[platformName] ?? 0;
   }
 
   isMarket(row: CountryRow): boolean {
     return row.isMarket ?? false;
   }
 
-/**
- * Obtiene el reach de una plataforma en modo edición de forma segura
- */
-getEditPlatformReach(platformName: string): number {
-  return this.editData()?.platforms[platformName] ?? 0;
-}
+  exportCsv(): void {
+    this.crossReachService.exportTableToCsv(this.tableData());
+  }
 }

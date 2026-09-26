@@ -1,140 +1,242 @@
-<div class="table-container">
-  <h2>Tabla de Escenarios</h2>
+<div class="results-card">
+  <!-- Toolbar Superior -->
+  <div class="table-toolbar">
+    <div class="toolbar-title-block">
+      <div class="table-icon-badge">
+        <span>📊</span>
+      </div>
+      <div>
+        <h2 class="table-title">Matriz Analítica de Multialcances (Cross Reach)</h2>
+        <p class="table-desc">Consolidado por país y mercados agregados con modelo matemático de deduplicación Sainsbury</p>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <!-- Buscador -->
+      @if (tableData().length > 0) {
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            placeholder="Filtrar país o mercado..."
+            class="search-input"
+          />
+          @if (searchTerm()) {
+            <button type="button" (click)="searchTerm.set('')" class="search-clear-btn">✕</button>
+          }
+        </div>
+
+        <!-- Botón Exportar CSV -->
+        <button
+          type="button"
+          (click)="exportCsv()"
+          class="btn-export-csv"
+          title="Descargar matriz en formato CSV para Excel / Google Sheets"
+        >
+          <span>📥 Exportar CSV</span>
+        </button>
+      }
+    </div>
+  </div>
 
   @if (tableData().length === 0) {
-    <div class="empty-state">
-      <p>No hay datos en la tabla. Agrega un país para comenzar.</p>
+    <!-- Estado Vacío -->
+    <div class="empty-table-state">
+      <div class="empty-state-graphic">📈</div>
+      <h3 class="empty-state-title">No hay escenarios registrados aún</h3>
+      <p class="empty-state-text">
+        Selecciona un país e introduce el alcance de tus plataformas en el formulario superior para ejecutar y ver el cálculo deduplicado en tiempo real.
+      </p>
     </div>
   } @else {
-    <div class="table-wrapper">
-      <table class="data-table">
+    <!-- Tabla de Datos -->
+    <div class="table-responsive-wrapper">
+      <table class="enterprise-data-table">
         <thead>
-          <tr>
-            <th rowspan="2">País</th>
-            <th rowspan="2">Universo</th>
+          <!-- Nivel 1 Header -->
+          <tr class="thead-row-top">
+            <th class="col-sticky col-country" rowspan="2">País / Región</th>
+            <th class="col-sticky col-universe" rowspan="2">Universo Base</th>
             @for (platform of uniquePlatforms(); track platform) {
-              <th colspan="2" [style.background-color]="platformColors[platform] || '#e0e0e0'">
-                {{ platform }}
+              <th colspan="2" class="platform-group-th" [style.--platform-color]="platformColors[platform] || '#6366f1'">
+                <div class="platform-th-content">
+                  <div class="platform-th-icon">
+                    <app-platform-icon [platformName]="platform"></app-platform-icon>
+                  </div>
+                  <span>{{ platform }}</span>
+                </div>
               </th>
             }
-            <th colspan="2">Cross Reach Platform</th>
-            <th rowspan="2">Acciones</th>
+            <th colspan="2" class="cross-reach-group-th">
+              <div class="cross-th-content">
+                <span>🎯 Deduplicación Cross Reach</span>
+              </div>
+            </th>
+            <th class="col-actions" rowspan="2">Acciones</th>
           </tr>
-          <tr>
+
+          <!-- Nivel 2 Header -->
+          <tr class="thead-row-sub">
             @for (platform of uniquePlatforms(); track platform) {
-              <th>Reach</th>
-              <th>%</th>
+              <th class="sub-col-reach">Reach</th>
+              <th class="sub-col-pct">% Univ.</th>
             }
-            <th>% Reach</th>
-            <th>Cross Reach</th>
+            <th class="sub-col-cross-pct">% Cobertura</th>
+            <th class="sub-col-cross-val">Alcance Final</th>
           </tr>
         </thead>
 
         <tbody>
-          @for (row of tableData(); track row.id) {
+          @for (row of filteredRows(); track row.id) {
             <tr
-              [class.editing]="editingId() === row.id"
-              [class.market-row]="isMarket(row)"
+              class="table-row"
+              [class.row-editing]="editingId() === row.id"
+              [class.row-market]="isMarket(row)"
             >
               @if (editingId() === row.id) {
-                <!-- Modo Edición -->
-                <td>
-                  <input
-                    type="text"
-                    [value]="editData()?.country"
-                    class="edit-input country-input"
-                    readonly
-                    disabled
-                  />
+                <!-- MODO EDICIÓN -->
+                <td class="col-sticky col-country cell-edit">
+                  <span class="edit-country-name">{{ editData()?.country }}</span>
                 </td>
-                <td>
+
+                <td class="col-sticky col-universe cell-edit">
                   <input
                     type="text"
                     [value]="editData()?.universe ? formatNumber(editData()!.universe) : ''"
                     (input)="onEditUniverseInput($event)"
-                    class="edit-input number-input"
+                    class="table-edit-input tabular"
                     placeholder="0"
                   />
                 </td>
+
                 @for (platform of uniquePlatforms(); track platform) {
-                  <td>
+                  <td class="cell-edit" [style.background]="platformBgTints[platform] || 'transparent'">
                     <input
                       type="text"
                       [value]="getEditPlatformReach(platform) > 0 ? formatNumber(getEditPlatformReach(platform)) : ''"
                       (input)="onEditReachInput(platform, $event)"
-                      class="edit-input number-input"
-                      [style.background-color]="platformColors[platform] + '40'"
+                      class="table-edit-input tabular"
                       placeholder="0"
                     />
                   </td>
-                  <td>-</td>
+                  <td class="cell-edit text-center muted">-</td>
                 }
-                <td colspan="2" class="editing-info">Editando...</td>
-                <td class="actions-cell">
-                  <button
-                    type="button"
-                    (click)="saveEdit(row)"
-                    class="btn-save"
-                    title="Guardar"
-                  >
-                    ✓
-                  </button>
-                  <button
-                    type="button"
-                    (click)="cancelEdit()"
-                    class="btn-cancel-edit"
-                    title="Cancelar"
-                  >
-                    ✗
-                  </button>
+
+                <td colspan="2" class="cell-edit-status">
+                  <span class="editing-pill">Modificando parámetros...</span>
+                </td>
+
+                <td class="col-actions cell-edit-actions">
+                  <div class="edit-actions-group">
+                    <button
+                      type="button"
+                      (click)="saveEdit(row)"
+                      class="btn-save-edit"
+                      title="Guardar cambios"
+                    >
+                      ✓ Guardar
+                    </button>
+                    <button
+                      type="button"
+                      (click)="cancelEdit()"
+                      class="btn-cancel-edit"
+                      title="Cancelar"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </td>
               } @else {
-                <!-- Modo Visualización -->
-                <td [class.market-label]="isMarket(row)">
+                <!-- MODO LECTURA NORMAL -->
+                <td class="col-sticky col-country">
+                  <div class="country-cell-content">
                     @if (isMarket(row)) {
-                    <span class="market-badge">Mercado</span>
-                  }
-                  {{ row.country }}
+                      <span class="market-tag">MERCADO AGREGADO</span>
+                    }
+                    <span class="country-name" [class.is-market-name]="isMarket(row)">
+                      {{ row.country }}
+                    </span>
+                  </div>
                 </td>
-                <td>{{ formatNumber(row.universe) }}</td>
+
+                <td class="col-sticky col-universe tabular font-semibold">
+                  {{ formatNumber(row.universe) }}
+                </td>
 
                 @for (platform of uniquePlatforms(); track platform) {
                   @let reach = getPlatformReach(row, platform);
                   @let percentage = calculatePercentage(reach, row.universe ?? 0);
 
-                  <td [style.background-color]="reach > 0 ? (platformColors[platform] + '60') : 'transparent'">
+                  <td class="tabular cell-platform-reach" [class.has-reach]="reach > 0">
                     {{ reach > 0 ? formatNumber(reach) : '-' }}
                   </td>
-                  <td [style.background-color]="reach > 0 ? (platformColors[platform] + '60') : 'transparent'">
-                    {{ reach > 0 ? percentage + '%' : '-' }}
+                  <td class="tabular cell-platform-pct" [class.has-reach]="reach > 0">
+                    @if (reach > 0) {
+                      <div class="pct-bar-wrap">
+                        <div
+                          class="pct-bar-fill"
+                          [style.width.%]="percentage > 100 ? 100 : percentage"
+                          [style.background-color]="platformColors[platform] || '#4f46e5'"
+                        ></div>
+                        <span class="pct-text">{{ percentage }}%</span>
+                      </div>
+                    } @else {
+                      <span class="muted">-</span>
+                    }
                   </td>
                 }
 
-                <td>{{ row.crossReachPercentage ? row.crossReachPercentage + '%' : '-' }}</td>
-                <td class="cross-reach-cell">
-                  {{ row.crossReach ? formatNumber(row.crossReach) : '-' }}
+                <!-- Columnas Cross Reach Deduplicado -->
+                <td class="tabular font-bold cross-pct-cell">
+                  @if (row.crossReachPercentage) {
+                    <span class="cross-pct-badge">{{ row.crossReachPercentage }}%</span>
+                  } @else {
+                    <span class="muted">-</span>
+                  }
                 </td>
 
-                <td class="actions-cell">
-                  @if (!isMarket(row)) {
-                    <button
-                      type="button"
-                      (click)="startEdit(row)"
-                      class="btn-edit"
-                      title="Editar"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      (click)="delete(row)"
-                      class="btn-delete"
-                      title="Eliminar"
-                    >
-                      Eliminar
-                    </button>
+                <td class="tabular font-bold cross-value-cell">
+                  @if (row.crossReach) {
+                    <div class="cross-value-wrap">
+                      <span class="cross-val-num">{{ formatNumber(row.crossReach) }}</span>
+                      @if (getGrossReachSum(row) > row.crossReach) {
+                        <span class="dedup-savings-hint" title="Audiencia bruta sin deduplicar: {{ formatNumber(getGrossReachSum(row)) }}">
+                          -{{ formatNumber(getGrossReachSum(row) - row.crossReach) }} dup.
+                        </span>
+                      }
+                    </div>
                   } @else {
-                    <span class="readonly-badge">Solo Lectura</span>
+                    <span class="muted">-</span>
+                  }
+                </td>
+
+                <!-- Columna de Acciones -->
+                <td class="col-actions">
+                  @if (!isMarket(row)) {
+                    <div class="row-actions-group">
+                      <button
+                        type="button"
+                        (click)="startEdit(row)"
+                        class="btn-row-edit"
+                        title="Editar valores de {{ row.country }}"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        type="button"
+                        (click)="delete(row, $event)"
+                        class="btn-row-delete"
+                        title="Eliminar {{ row.country }}"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="calculated-badge" title="Calculado automáticamente según países miembros">
+                      ⚡ Automático
+                    </span>
                   }
                 </td>
               }
@@ -142,6 +244,18 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <!-- Leyenda de Mercados -->
+    <div class="table-legend-card">
+      <div class="legend-item">
+        <span class="legend-badge casaca-badge">Mercado Casaca</span>
+        <span class="legend-text">Se consolida automáticamente al incluir 2 o más países entre Colombia, Chile, Perú y Costa Rica.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-badge latam-badge">Mercado Latam</span>
+        <span class="legend-text">Se consolida automáticamente al incluir México + al menos 1 país adicional de la región.</span>
+      </div>
     </div>
   }
 </div>

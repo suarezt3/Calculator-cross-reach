@@ -1,32 +1,159 @@
-.app-container {
+.app-layout {
   min-height: 100vh;
-  background: #f5f5f5;
   display: flex;
   flex-direction: column;
+  background-color: #f8fafc;
 }
 
-.app-header {
-  background: linear-gradient(135deg, #0027d4 0%, #350268 100%);
-  color: white;
-  padding: 16px 24px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.app-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
 
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-  }
+.topbar-container {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 
-  .subtitle {
-    margin: 4px 0 0;
-    font-size: 13px;
-    opacity: 0.9;
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.brand-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.brand-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.version-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4338ca;
+  background: #e0e7ff;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.03em;
+}
+
+.brand-subtitle {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 9999px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.btn-topbar-secondary {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
   }
 }
 
-.app-main {
-  max-width: 1400px;
+.btn-topbar-danger {
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: #fef2f2;
+    border-color: #f87171;
+  }
+}
+
+.app-main-content {
+  max-width: 1480px;
   width: 100%;
   margin: 0 auto;
   padding: 24px;
@@ -34,13 +161,39 @@
 }
 
 .app-footer {
-  background: #333;
-  color: white;
-  text-align: center;
-  padding: 12px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 16px 24px;
+  margin-top: auto;
+}
 
-  p {
-    margin: 0;
-    font-size: 13px;
+.footer-content {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.footer-copyright {
+  margin: 0;
+
+  strong {
+    color: #334155;
   }
+}
+
+.formula-badge {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4338ca;
 }

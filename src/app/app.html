@@ -1,23 +1,82 @@
-<div class="app-container">
-  <header class="app-header">
-    <h1>{{ title }}</h1>
-    <p class="subtitle">Calculadora de Cross Reach - Fórmula de Sainsbury</p>
+<div class="app-layout">
+  <!-- Topbar Corporativo -->
+  <header class="app-topbar">
+    <div class="topbar-container">
+      <div class="brand-block">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-svg">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#4f46e5"/>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-wrap">
+            <h1 class="brand-title">{{ title }}</h1>
+            <span class="version-badge">Enterprise v2.5</span>
+          </div>
+          <p class="brand-subtitle">{{ subtitle }}</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="system-status">
+          <span class="status-indicator"></span>
+          <span class="status-text">Motor Sainsbury Activo</span>
+        </div>
+
+        <button
+          type="button"
+          (click)="loadInitialDemoData()"
+          class="btn-topbar-secondary"
+          title="Cargar escenario multicountry de ejemplo"
+        >
+          <span>🔄 Cargar Demo</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="handleResetTable()"
+          class="btn-topbar-danger"
+          title="Limpiar todos los datos"
+        >
+          <span>🗑️ Restablecer</span>
+        </button>
+      </div>
+    </div>
   </header>
 
-  <main class="app-main">
-    <app-platform-form
-      [usedCountries]="usedCountries"
-      (addToTable)="handleAddToTable($event)"
-    />
+  <!-- Contenedor Principal -->
+  <main class="app-main-content">
+    <!-- Ribbon de KPIs Ejecutivos -->
+    <app-kpi-summary [kpi]="kpiSummary()"></app-kpi-summary>
 
+    <!-- Formulario Workbench de Configuración -->
+    <app-platform-form
+      [usedCountries]="usedCountries()"
+      (addToTable)="handleAddToTable($event)"
+    ></app-platform-form>
+
+    <!-- Tabla Analítica de Resultados -->
     <app-results-table
-      [data]="displayData"
+      [data]="displayData()"
       (editRow)="handleEditRow($event)"
       (deleteRow)="handleDeleteRow($event)"
-    />
+    ></app-results-table>
   </main>
 
+  <!-- Footer Corporativo -->
   <footer class="app-footer">
-    <p>&copy; 2026 Cross Reach Calculator. Desarrollado por Eyder Suárez.</p>
+    <div class="footer-content">
+      <div class="footer-left">
+        <p class="footer-copyright">
+          &copy; 2026 <strong>Cross Reach Calculator</strong> &bull; Media Planning & Audience Deduplication Studio.
+        </p>
+      </div>
+      <div class="footer-right">
+        <span class="formula-badge" title="Fórmula iterativa de deduplicación probabilística de Sainsbury">
+          📐 R_cross = R1 + R2 - (1.05 &times; R1 &times; R2)
+        </span>
+      </div>
+    </div>
   </footer>
 </div>

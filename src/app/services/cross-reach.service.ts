@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { CountryRow, PlatformReach } from '../models/platform.models';
+import { CountryRow, PlatformReach, KpiSummary } from '../models/platform.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CrossReachService {
 
-  // Países que pueden componer Casaca
+  // Países que componen Casaca
   private readonly CASACA_COUNTRIES = ['Colombia', 'Chile', 'Peru', 'Costa Rica'];
 
   // País requerido para Latam
@@ -19,6 +19,7 @@ export class CrossReachService {
 
   /**
    * Calcula el Cross Reach usando la fórmula de Sainsbury
+   * R_cross = R1 + R2 - (1.05 * R1 * R2) de forma iterativa y ordenada descendente
    */
   calculateCrossReach(platforms: PlatformReach[], universe: number): { crossReach: number; percentage: number } {
     if (platforms.length === 0 || universe === 0) {
@@ -70,7 +71,7 @@ export class CrossReachService {
   }
 
   /**
-   * Actualiza una fila existente
+   * Actualiza una fila existente recalculando el cross reach
    */
   updateRowInTable(rows: CountryRow[], updatedRow: CountryRow): CountryRow[] {
     const calculation = this.calculateCrossReach(updatedRow.platforms, updatedRow.universe ?? 0);
@@ -92,12 +93,16 @@ export class CrossReachService {
   }
 
   /**
-   * Obtiene todas las plataformas únicas de todas las filas
+   * Obtiene todas las plataformas únicas de todas las filas registradas
    */
   getAllUniquePlatforms(rows: CountryRow[]): string[] {
     const platforms = new Set<string>();
     rows.forEach(row => {
-      row.platforms.forEach(p => platforms.add(p.platformName));
+      row.platforms.forEach(p => {
+        if ((p.reach ?? 0) > 0 || row.platforms.length > 0) {
+          platforms.add(p.platformName);
+        }
+      });
     });
     return Array.from(platforms).sort();
   }
@@ -107,12 +112,10 @@ export class CrossReachService {
    * Regla: Se compone con 2 o más países de [Colombia, Chile, Peru, Costa Rica]
    */
   calculateCasacaMarket(rows: CountryRow[]): CountryRow | null {
-    // Filtrar solo países que pertenecen a Casaca
     const casacaRows = rows.filter(
       row => !row.isMarket && this.CASACA_COUNTRIES.includes(row.country)
     );
 
-    // Necesita al menos 2 países para formar Casaca
     if (casacaRows.length < 2) {
       return null;
     }
@@ -125,15 +128,12 @@ export class CrossReachService {
    * Regla: Se compone con Mexico + al menos 1 país más
    */
   calculateLatamMarket(rows: CountryRow[]): CountryRow | null {
-    // Filtrar solo países que pertenecen a Latam (excluyendo mercados)
     const latamRows = rows.filter(
       row => !row.isMarket && this.ALL_LATAM_COUNTRIES.includes(row.country)
     );
 
-    // Verificar que exista Mexico
     const hasMexico = latamRows.some(row => row.country === this.LATAM_REQUIRED_COUNTRY);
 
-    // Necesita Mexico + al menos 1 país más (total 2+)
     if (!hasMexico || latamRows.length < 2) {
       return null;
     }
@@ -142,19 +142,16 @@ export class CrossReachService {
   }
 
   /**
-   * Construye un mercado agregado sumando los reaches de las filas dadas
+   * Construye un mercado agregado sumando los reaches y universos de las filas dadas
    */
   private buildAggregatedMarket(rows: CountryRow[], marketName: string): CountryRow {
-    // Sumar universos
     const totalUniverse = rows.reduce((sum, row) => sum + (row.universe ?? 0), 0);
 
-    // Obtener todas las plataformas únicas del mercado
     const allPlatforms = new Set<string>();
     rows.forEach(row => {
       row.platforms.forEach(p => allPlatforms.add(p.platformName));
     });
 
-    // Sumar reaches por plataforma
     const aggregatedPlatforms: PlatformReach[] = [];
     allPlatforms.forEach(platformName => {
       const totalReach = rows.reduce((sum, row) => {
@@ -170,7 +167,6 @@ export class CrossReachService {
       }
     });
 
-    // Calcular cross reach
     const calculation = this.calculateCrossReach(aggregatedPlatforms, totalUniverse);
 
     return {
@@ -185,17 +181,14 @@ export class CrossReachService {
   }
 
   /**
-   * Obtiene todas las filas incluyendo los mercados calculados
+   * Obtiene todas las filas incluyendo los mercados calculados (Casaca / Latam)
    */
   getAllRowsWithMarkets(rows: CountryRow[]): CountryRow[] {
-    // Filtrar filas que no sean mercados
     const countryRows = rows.filter(row => !row.isMarket);
 
-    // Calcular mercados
     const casacaMarket = this.calculateCasacaMarket(countryRows);
     const latamMarket = this.calculateLatamMarket(countryRows);
 
-    // Construir resultado
     const result = [...countryRows];
 
     if (casacaMarket) {
@@ -207,5 +200,127 @@ export class CrossReachService {
     }
 
     return result;
+  }
+
+  /**
+   * Genera el resumen ejecutivo KPI para visualización estratégica
+   */
+  calculateKpiSummary(rows: CountryRow[]): KpiSummary {
+    const countryRows = rows.filter(row => !row.isMarket);
+    const displayedRows = this.getAllRowsWithMarkets(rows);
+    const marketRows = displayedRows.filter(r => r.isMarket);
+
+    if (countryRows.length === 0) {
+      return {
+        totalDeduplicatedReach: 0,
+        totalGrossReach: 0,
+        overallEfficiencyPercent: 0,
+        averageReachPercent: 0,
+        topPlatformName: 'N/A',
+        topPlatformReach: 0,
+        activeCountriesCount: 0,
+        activeMarketsCount: 0,
+        totalUniverse: 0
+      };
+    }
+
+    // Universo total sumado de países base
+    const totalUniverse = countryRows.reduce((sum, r) => sum + (r.universe ?? 0), 0);
+
+    // Suma de alcances brutos (sin deduplicar)
+    let totalGrossReach = 0;
+    const platformTotals = new Map<string, number>();
+
+    countryRows.forEach(row => {
+      row.platforms.forEach(p => {
+        const reach = p.reach ?? 0;
+        totalGrossReach += reach;
+        platformTotals.set(p.platformName, (platformTotals.get(p.platformName) || 0) + reach);
+      });
+    });
+
+    // Suma de Cross Reaches por país
+    const totalDeduplicatedReach = countryRows.reduce((sum, r) => sum + (r.crossReach ?? 0), 0);
+
+    // Porcentaje de deduplicación / solapamiento optimizado
+    const overallEfficiencyPercent = totalGrossReach > 0
+      ? Math.round(((totalGrossReach - totalDeduplicatedReach) / totalGrossReach) * 100)
+      : 0;
+
+    // Alcance promedio ponderado
+    const averageReachPercent = totalUniverse > 0
+      ? parseFloat(((totalDeduplicatedReach / totalUniverse) * 100).toFixed(2))
+      : 0;
+
+    // Top Platform
+    let topPlatformName = 'N/A';
+    let topPlatformReach = 0;
+    platformTotals.forEach((reach, name) => {
+      if (reach > topPlatformReach) {
+        topPlatformReach = reach;
+        topPlatformName = name;
+      }
+    });
+
+    return {
+      totalDeduplicatedReach,
+      totalGrossReach,
+      overallEfficiencyPercent,
+      averageReachPercent,
+      topPlatformName,
+      topPlatformReach,
+      activeCountriesCount: countryRows.length,
+      activeMarketsCount: marketRows.length,
+      totalUniverse
+    };
+  }
+
+  /**
+   * Genera y descarga un CSV con los resultados calculados
+   */
+  exportTableToCsv(rows: CountryRow[]): void {
+    if (rows.length === 0) return;
+
+    const uniquePlatforms = this.getAllUniquePlatforms(rows);
+    const headers = ['Tipo', 'Pais / Region', 'Universo Total'];
+
+    uniquePlatforms.forEach(p => {
+      headers.push(`${p} Reach`, `${p} %`);
+    });
+
+    headers.push('% Cross Reach Final', 'Cross Reach Deduplicado (Sainsbury)');
+
+    const csvRows: string[] = [headers.join(',')];
+
+    rows.forEach(row => {
+      const type = row.isMarket ? 'Mercado Agregado' : 'Pais Individual';
+      const line: (string | number)[] = [
+        `"${type}"`,
+        `"${row.country}"`,
+        row.universe ?? 0
+      ];
+
+      uniquePlatforms.forEach(platformName => {
+        const platform = row.platforms.find(p => p.platformName === platformName);
+        const reach = platform?.reach ?? 0;
+        const pct = (row.universe && row.universe > 0) ? ((reach / row.universe) * 100).toFixed(2) : '0';
+        line.push(reach, `${pct}%`);
+      });
+
+      line.push(
+        `${row.crossReachPercentage ?? 0}%`,
+        row.crossReach ?? 0
+      );
+
+      csvRows.push(line.join(','));
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csvRows.join('\n'));
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `cross_reach_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

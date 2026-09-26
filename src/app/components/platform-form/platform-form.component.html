@@ -1,135 +1,224 @@
-<div class="form-container">
-  <h2>Ingreso de Datos</h2>
-
-  <!-- Inputs de País y Universo -->
-  <div class="form-row">
-    <div class="form-group">
-      <label for="country">País</label>
-      <select
-        id="country"
-        [ngModel]="country()"
-        (ngModelChange)="onCountrySelect($event)"
-        class="form-select"
-      >
-        <option value="" disabled>Selecciona un país</option>
-        @for (c of availableCountries(); track c) {
-          <option [value]="c">{{ c }}</option>
-        }
-      </select>
+<div class="workbench-card">
+  <!-- Header de la sección con Presets -->
+  <div class="workbench-header">
+    <div class="header-title-block">
+      <div class="header-icon-badge">
+        <span>⚙️</span>
+      </div>
+      <div>
+        <h2 class="workbench-title">Configuración de Escenario por País</h2>
+        <p class="workbench-desc">Define el universo demográfico e introduce los alcances individuales de cada medio</p>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="universe">Universo</label>
-      <input
-        type="text"
-        id="universe"
-        [value]="universe() ? formatNumber(universe()) : ''"
-        (input)="onUniverseInput($event)"
-        placeholder="Ej: 27.000.000"
-        class="form-input number-input"
-      />
+    <!-- Quick Presets -->
+    <div class="presets-toolbar">
+      <span class="presets-label">Mix Rápido:</span>
+      <button type="button" (click)="applyPreset('social')" class="preset-btn" title="Meta, TikTok">
+        📱 Social Mix (Meta + TikTok)
+      </button>
+      <button type="button" (click)="applyPreset('video')" class="preset-btn" title="Meta, YouTube, TikTok">
+        🎬 Video & Social
+      </button>
+      <button type="button" (click)="applyPreset('all')" class="preset-btn" title="Meta, YouTube, TikTok, Display">
+        🌐 Mix Completo (Todas)
+      </button>
     </div>
   </div>
 
-  <!-- Plataformas agregadas -->
-  <div class="platforms-section">
-    <h3>Plataformas</h3>
-
-    <div class="platforms-grid">
-      @for (platform of platforms(); track platform.platformName) {
-        <div
-          class="platform-card"
-          [style.background-color]="platformColors[platform.platformName] || '#e0e0e0'"
+  <!-- Parámetros Principales: País y Universo -->
+  <div class="params-grid">
+    <div class="input-card">
+      <label for="country-select" class="field-label">
+        <span>País / Territorio</span>
+        <span class="field-required">*</span>
+      </label>
+      <div class="select-wrapper">
+        <select
+          id="country-select"
+          [ngModel]="country()"
+          (ngModelChange)="onCountrySelect($event)"
+          class="custom-select"
         >
-          <div class="platform-header">
-            <!-- Icono de la plataforma -->
-            <div class="platform-icon-wrapper">
-              <app-platform-icon [platformName]="platform.platformName"></app-platform-icon>
-            </div>
-            <button
-              type="button"
-              (click)="removePlatform(platform.platformName)"
-              class="btn-remove"
-              title="Eliminar plataforma"
-            >
-              🗑️
-            </button>
-          </div>
-
-          <div class="platform-input">
-            <label>Reach</label>
-            <input
-              type="text"
-              [value]="platform.reach ? formatNumber(platform.reach) : ''"
-              (input)="onReachInput(platform.platformName, $event)"
-              placeholder="0"
-              class="number-input"
-            />
-          </div>
-        </div>
-      }
+          <option value="" disabled selected>Seleccionar país...</option>
+          @for (c of availableCountries(); track c.name) {
+            <option [value]="c.name">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+      <span class="field-hint">
+        @if (availableCountries().length === 0) {
+          Todos los países disponibles ya están en la tabla
+        } @else {
+          Selecciona un mercado para cargar la población base sugerida
+        }
+      </span>
     </div>
 
-    <!-- Botón para agregar plataforma -->
-    <button
-      type="button"
-      (click)="openPlatformSelector()"
-      class="btn-add-platform"
-    >
-      + Agregar Plataforma
-    </button>
+    <div class="input-card">
+      <label for="universe-input" class="field-label">
+        <span>Universo Poblacional Objetivo</span>
+        <span class="field-required">*</span>
+      </label>
+      <div class="input-with-adornment">
+        <span class="input-prefix">👥</span>
+        <input
+          type="text"
+          id="universe-input"
+          [value]="universe() ? formatNumber(universe()) : ''"
+          (input)="onUniverseInput($event)"
+          placeholder="Ej: 39.500.000"
+          class="custom-input tabular"
+        />
+      </div>
+      <span class="field-hint">Población total sobre la cual se calculará el % de cobertura</span>
+    </div>
   </div>
 
-  <!-- Mensaje de validación -->
+  <!-- Canales y Plataformas -->
+  <div class="platforms-container">
+    <div class="platforms-topbar">
+      <div class="platforms-heading">
+        <h3 class="platforms-title">Canales y Alcance Individual (Reach)</h3>
+        <span class="platforms-count">{{ platforms().length }} plataformas activas</span>
+      </div>
+
+      <button
+        type="button"
+        (click)="openPlatformSelector()"
+        class="btn-add-channel"
+        [disabled]="availablePlatforms().length === 0"
+      >
+        <span class="btn-icon">+</span>
+        <span>Añadir Plataforma</span>
+      </button>
+    </div>
+
+    @if (platforms().length === 0) {
+      <div class="empty-platforms-prompt" (click)="openPlatformSelector()">
+        <div class="empty-icon">➕</div>
+        <p class="empty-title">Ninguna plataforma añadida todavía</p>
+        <p class="empty-subtitle">Haz clic aquí o usa los accesos de "Mix Rápido" superiores para agregar canales</p>
+      </div>
+    } @else {
+      <div class="platform-cards-grid">
+        @for (platform of platforms(); track platform.platformName) {
+          <div
+            class="channel-reach-card"
+            [style.--platform-color]="platformColors[platform.platformName] || '#6366f1'"
+            [style.--platform-bg]="platformBgTints[platform.platformName] || 'rgba(99, 102, 241, 0.08)'"
+          >
+            <!-- Header de Tarjeta -->
+            <div class="channel-card-head">
+              <div class="channel-identity">
+                <div class="channel-logo-badge">
+                  <app-platform-icon [platformName]="platform.platformName"></app-platform-icon>
+                </div>
+                <span class="channel-label">{{ platform.platformName }}</span>
+              </div>
+
+              <button
+                type="button"
+                (click)="removePlatform(platform.platformName)"
+                class="btn-remove-channel"
+                title="Eliminar {{ platform.platformName }}"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Input de Reach -->
+            <div class="channel-input-wrapper">
+              <label class="channel-input-label">Alcance Único</label>
+              <div class="channel-input-box">
+                <input
+                  type="text"
+                  [value]="platform.reach ? formatNumber(platform.reach) : ''"
+                  (input)="onReachInput(platform.platformName, $event)"
+                  placeholder="0"
+                  class="reach-input tabular"
+                />
+              </div>
+            </div>
+
+            <!-- Footer con preview del % del universo -->
+            <div class="channel-card-footer">
+              <span class="pct-label">Penetración</span>
+              <span class="pct-value" [class.has-value]="(platform.reach ?? 0) > 0">
+                {{ getReachPercentage(platform.reach) }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Alerta de Validación -->
   @if (errorMessage()) {
-    <div class="form-error" role="alert">
-      <span>⚠️ {{ errorMessage() }}</span>
+    <div class="validation-alert" role="alert">
+      <span class="alert-icon">⚠️</span>
+      <span class="alert-text">{{ errorMessage() }}</span>
     </div>
   }
 
-  <!-- Botón agregar a tabla -->
-  <div class="form-actions">
+  <!-- Acciones del Formulario -->
+  <div class="workbench-actions">
     <button
       type="button"
       (click)="submitForm()"
-      class="btn-submit"
+      class="btn-submit-scenario"
     >
-      Agregar a la Tabla
+      <span>🚀 Calcular & Ejecutar Escenario</span>
+    </button>
+    <button
+      type="button"
+      (click)="clearForm()"
+      class="btn-reset"
+      title="Limpiar formulario actual"
+    >
+      Limpiar Campos
     </button>
   </div>
 </div>
 
 <!-- Modal Selector de Plataformas -->
 @if (showPlatformSelector()) {
-  <div class="modal-overlay" (click)="showPlatformSelector.set(false)">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <h3>Selecciona una Plataforma</h3>
+  <div class="modal-backdrop" (click)="showPlatformSelector.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Seleccionar Plataforma Publicitaria</h3>
+          <p class="modal-subtitle">Añade canales digitales a tu plan</p>
+        </div>
+        <button type="button" (click)="showPlatformSelector.set(false)" class="modal-close-btn">✕</button>
+      </div>
 
-      <div class="platform-list">
+      <div class="platform-picker-grid">
         @for (platform of availablePlatforms(); track platform) {
           <button
             type="button"
             (click)="addPlatform(platform)"
-            class="platform-option"
-            [style.border-left-color]="platformColors[platform] || '#333'"
+            class="platform-picker-item"
+            [style.--platform-color]="platformColors[platform] || '#4f46e5'"
           >
-            <div class="platform-option-icon">
+            <div class="picker-icon-box">
               <app-platform-icon [platformName]="platform"></app-platform-icon>
             </div>
-            <span>{{ platform }}</span>
+            <span class="picker-name">{{ platform }}</span>
           </button>
         } @empty {
-          <p class="no-platforms">No hay plataformas disponibles</p>
+          <div class="no-platforms-message">
+            <span>✅ Todas las plataformas han sido seleccionadas en este escenario</span>
+          </div>
         }
       </div>
 
-      <button
-        type="button"
-        (click)="showPlatformSelector.set(false)"
-        class="btn-cancel"
-      >
-        ✗ Cancelar
-      </button>
+      <div class="modal-footer">
+        <button type="button" (click)="showPlatformSelector.set(false)" class="btn-modal-cancel">
+          Cerrar
+        </button>
+      </div>
     </div>
   </div>
 }
