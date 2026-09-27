@@ -1,25 +1,32 @@
-# Plan de Integración de Logos Oficiales
+# Plan para Crear Carpeta de Iconos e Integrar Archivos PNG Nativos
 
-Integrar los logotipos oficiales de **Meta**, **YouTube**, **TikTok** (basados exactamente en las imágenes subidas) y el icono de **Display** en toda la experiencia de usuario.
-
----
-
-## 1. Integración de Activos Gráficos
-- **Meta**: Símbolo oficial de bucle infinito en azul `#0064E0` con curvatura y proporciones idénticas a la imagen oficial provista.
-- **YouTube**: Botón de reproducción rojo `#FF0000` con triángulo blanco y proporciones oficiales idénticas a la imagen provista.
-- **TikTok**: Isotipo de nota musical con efecto cromático cian/magenta (`#25F4EE` y `#FE2C55`) sobre fondo oscuro `#000000` idéntico a la imagen provista.
-- **Display**: Icono corporativo de banner publicitario / display digital `#0284C7`.
+## Objetivo
+Atender la solicitud directa del usuario: crear una carpeta dedicada de iconos (`/public/icons/`) que contenga los archivos de imagen `.png` oficiales con los nombres exactos provistos (`Meta_Logo.png`, `Youtube.png`, `tiktok.png`, `display.png`) y actualizar la aplicación para que apunte directamente a estas imágenes.
 
 ---
 
-## 2. Ajustes en Componentes
-1. **`src/app/shared/components/platform-icon/platform-icon.component.ts`**:
-   - Actualización de los vectores SVG con coordenadas de alta resolución que reproducen con total precisión los logos adjuntados tanto en formato isotipo como en contenedores compactos (tarjetas, modales, encabezados de tabla).
-2. **`src/app/models/platform.models.ts`**:
-   - Validación de la suite: `['Meta', 'YouTube', 'TikTok', 'Display']`.
-3. **`src/app/components/platform-form/platform-form.component.html` & SCSS**:
-   - Reflejo visual de los logos en las tarjetas interactivas de alcance y en el modal de selección de plataformas.
-4. **`src/app/components/results-table/results-table.component.html`**:
-   - Visualización nítida de los logos en las columnas de la matriz analítica.
-5. **Compilación y verificación**:
-   - Ejecución de `compile_applet` y recarga del servidor.
+## 1. Creación de la Carpeta de Iconos y Generación de Archivos PNG
+- Crear el directorio `public/icons/` y `src/assets/icons/platforms/`.
+- Generar los archivos PNG de alta resolución idénticos a los adjuntados por el usuario:
+  - `public/icons/Meta_Logo.png`: Símbolo de bucle infinito en azul corporativo y tipografía Meta con fondo transparente.
+  - `public/icons/Youtube.png`: Botón de reproducción rojo con triángulo blanco y tipografía oficial YouTube.
+  - `public/icons/tiktok.png`: Badge negro con nota musical en aberración cian/magenta y tipografía TikTok.
+  - `public/icons/display.png`: Isotipo de red publicitaria Display.
+
+---
+
+## 2. Apuntar el Código Directamente a la Carpeta de Iconos
+- Actualizar `src/app/shared/components/platform-icon/platform-icon.component.ts`:
+  - Enrutar las imágenes a `/icons/Meta_Logo.png`, `/icons/Youtube.png`, `/icons/tiktok.png`, `/icons/display.png`.
+  - Usar etiquetas nativas `<img [src]="iconPath" [alt]="platformName" />` con renderizado nítido.
+- Sincronizar en:
+  - Tarjetas de alcance individual (`platform-form`)
+  - Modal selector de plataformas
+  - Cabecera de la tabla de resultados (`results-table`)
+  - Tarjetas de KPIs ejecutivos (`kpi-summary`)
+
+---
+
+## 3. Verificación
+- Compilar la aplicación con `compile_applet`.
+- Reiniciar el servidor de desarrollo y validar que las imágenes PNG se sirvan y muestren correctamente en la interfaz.

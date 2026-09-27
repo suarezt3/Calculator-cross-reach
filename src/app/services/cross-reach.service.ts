@@ -239,17 +239,37 @@ export class CrossReachService {
       });
     });
 
-    // Suma de Cross Reaches por país
-    const totalDeduplicatedReach = countryRows.reduce((sum, r) => sum + (r.crossReach ?? 0), 0);
+    // Deduplicación regional sincronizada con la fila Latam
+    const latamMarket = displayedRows.find(r => r.country.toLowerCase() === 'latam');
+    const casacaMarket = displayedRows.find(r => r.country.toLowerCase() === 'casaca');
+
+    let totalDeduplicatedReach = 0;
+    let averageReachPercent = 0;
+
+    if (latamMarket && (latamMarket.crossReach ?? 0) > 0) {
+      // Coincidencia exacta con la fila Latam de la tabla
+      totalDeduplicatedReach = latamMarket.crossReach ?? 0;
+      averageReachPercent = latamMarket.crossReachPercentage ?? 0;
+    } else if (casacaMarket && (casacaMarket.crossReach ?? 0) > 0) {
+      totalDeduplicatedReach = casacaMarket.crossReach ?? 0;
+      averageReachPercent = casacaMarket.crossReachPercentage ?? 0;
+    } else if (countryRows.length === 1) {
+      totalDeduplicatedReach = countryRows[0].crossReach ?? 0;
+      averageReachPercent = countryRows[0].crossReachPercentage ?? 0;
+    } else {
+      // Cálculo Sainsbury regional conjunto para los países activos
+      const aggregatedPlatforms: PlatformReach[] = [];
+      platformTotals.forEach((reach, platformName) => {
+        aggregatedPlatforms.push({ platformName, reach });
+      });
+      const regionalCalc = this.calculateCrossReach(aggregatedPlatforms, totalUniverse);
+      totalDeduplicatedReach = regionalCalc.crossReach;
+      averageReachPercent = regionalCalc.percentage;
+    }
 
     // Porcentaje de deduplicación / solapamiento optimizado
     const overallEfficiencyPercent = totalGrossReach > 0
       ? Math.round(((totalGrossReach - totalDeduplicatedReach) / totalGrossReach) * 100)
-      : 0;
-
-    // Alcance promedio ponderado
-    const averageReachPercent = totalUniverse > 0
-      ? parseFloat(((totalDeduplicatedReach / totalUniverse) * 100).toFixed(2))
       : 0;
 
     // Top Platform

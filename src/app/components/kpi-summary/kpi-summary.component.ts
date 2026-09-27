@@ -16,7 +16,7 @@ import { PlatformIconComponent } from '../../shared/components/platform-icon/pla
           <span class="kpi-badge primary-badge">Sainsbury Model</span>
         </div>
         <div class="kpi-value-container">
-          <span class="kpi-value">{{ formatNumber(kpi.totalDeduplicatedReach) }}</span>
+          <span class="kpi-value tabular">{{ formatNumber(kpi.totalDeduplicatedReach) }}</span>
           <span class="kpi-unit">personas</span>
         </div>
         <div class="kpi-subtext">
@@ -32,7 +32,7 @@ import { PlatformIconComponent } from '../../shared/components/platform-icon/pla
           <span class="kpi-badge success-badge">{{ kpi.overallEfficiencyPercent }}% Solapamiento</span>
         </div>
         <div class="kpi-value-container">
-          <span class="kpi-value">{{ formatNumber(kpi.totalGrossReach - kpi.totalDeduplicatedReach) }}</span>
+          <span class="kpi-value tabular">{{ formatNumber(kpi.totalGrossReach - kpi.totalDeduplicatedReach) }}</span>
           <span class="kpi-unit">duplicados prevenidos</span>
         </div>
         <div class="kpi-subtext">

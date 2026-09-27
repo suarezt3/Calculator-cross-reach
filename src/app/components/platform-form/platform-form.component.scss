@@ -328,14 +328,15 @@
 }
 
 .channel-logo-badge {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--platform-bg);
-  padding: 2px;
+  padding: 3px;
+  flex-shrink: 0;
 }
 
 .channel-label {
@@ -585,8 +586,8 @@
 }
 
 .picker-icon-box {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   background: #ffffff;
   padding: 3px;

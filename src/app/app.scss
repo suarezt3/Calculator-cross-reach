@@ -15,9 +15,10 @@
 }
 
 .topbar-container {
-  max-width: 1480px;
+  max-width: 1780px;
+  width: 100%;
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -153,22 +154,22 @@
 }
 
 .app-main-content {
-  max-width: 1480px;
+  max-width: 1780px;
   width: 100%;
   margin: 0 auto;
-  padding: 24px;
+  padding: 18px 20px 32px;
   flex: 1;
 }
 
 .app-footer {
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
-  padding: 16px 24px;
+  padding: 14px 20px;
   margin-top: auto;
 }
 
 .footer-content {
-  max-width: 1480px;
+  max-width: 1780px;
   margin: 0 auto;
   display: flex;
   align-items: center;
