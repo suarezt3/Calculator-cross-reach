@@ -21,8 +21,18 @@
       <div class="topbar-actions">
         <div class="system-status">
           <span class="status-indicator"></span>
-          <span class="status-text">Motor Sainsbury Activo</span>
+          <span class="status-text">Motor Deduplicación Activo</span>
         </div>
+
+        <!-- Botón Documentación del Cálculo -->
+        <button
+          type="button"
+          (click)="openDocModal()"
+          class="btn-topbar-doc"
+          title="Ver documentación técnica y fundamentos del cálculo"
+        >
+          <span>📖 Documentación</span>
+        </button>
 
         <button
           type="button"
@@ -61,6 +71,7 @@
       [data]="displayData()"
       (editRow)="handleEditRow($event)"
       (deleteRow)="handleDeleteRow($event)"
+      (openReportModal)="openReportModal()"
     ></app-results-table>
   </main>
 
@@ -73,10 +84,23 @@
         </p>
       </div>
       <div class="footer-right">
-        <span class="formula-badge" title="Fórmula iterativa de deduplicación probabilística de Sainsbury">
+        <span class="formula-badge" title="Fórmula iterativa de deduplicación probabilística de audiencias">
           📐 R_cross = R1 + R2 - (1.05 &times; R1 &times; R2)
         </span>
       </div>
     </div>
   </footer>
+
+  <!-- Modal de Documentación Técnica -->
+  @if (showDocModal()) {
+    <app-documentation-modal (close)="closeDocModal()"></app-documentation-modal>
+  }
+
+  <!-- Modal de Tabla Condensada para Reporte -->
+  @if (showReportModal()) {
+    <app-report-table-modal
+      [rows]="displayData()"
+      (close)="closeReportModal()"
+    ></app-report-table-modal>
+  }
 </div>

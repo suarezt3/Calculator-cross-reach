@@ -7,7 +7,7 @@
       </div>
       <div>
         <h2 class="table-title">Matriz Analítica de Multialcances (Cross Reach)</h2>
-        <p class="table-desc">Consolidado por país y mercados agregados con modelo matemático de deduplicación Sainsbury</p>
+        <p class="table-desc">Consolidado por país y mercados agregados con modelo probabilístico de deduplicación de audiencias</p>
       </div>
     </div>
 
@@ -27,6 +27,16 @@
             <button type="button" (click)="searchTerm.set('')" class="search-clear-btn">✕</button>
           }
         </div>
+
+        <!-- Botón Tabla para Reporte (Screenshot / Copiar) -->
+        <button
+          type="button"
+          (click)="openReportModal.emit()"
+          class="btn-report-table"
+          title="Abrir tabla condensada para capturas y reportes ejecutivos"
+        >
+          <span>📸 Tabla para Reporte</span>
+        </button>
 
         <!-- Botón Exportar CSV -->
         <button

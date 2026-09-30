@@ -13,7 +13,7 @@ import { PlatformIconComponent } from '../../shared/components/platform-icon/pla
       <div class="kpi-card highlight-card">
         <div class="kpi-header">
           <span class="kpi-label">Alcance Cross Deduplicado</span>
-          <span class="kpi-badge primary-badge">Sainsbury Model</span>
+          <span class="kpi-badge primary-badge">Net Reach Model</span>
         </div>
         <div class="kpi-value-container">
           <span class="kpi-value tabular">{{ formatNumber(kpi.totalDeduplicatedReach) }}</span>

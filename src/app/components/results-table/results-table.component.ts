@@ -20,6 +20,7 @@ export class ResultsTableComponent {
 
   @Output() editRow = new EventEmitter<CountryRow>();
   @Output() deleteRow = new EventEmitter<string>();
+  @Output() openReportModal = new EventEmitter<void>();
 
   tableData = signal<CountryRow[]>([]);
   uniquePlatforms = signal<string[]>([]);

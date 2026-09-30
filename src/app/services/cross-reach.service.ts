@@ -18,7 +18,7 @@ export class CrossReachService {
   constructor() { }
 
   /**
-   * Calcula el Cross Reach usando la fórmula de Sainsbury
+   * Calcula el Cross Reach usando el modelo de deduplicación probabilística iterativa
    * R_cross = R1 + R2 - (1.05 * R1 * R2) de forma iterativa y ordenada descendente
    */
   calculateCrossReach(platforms: PlatformReach[], universe: number): { crossReach: number; percentage: number } {
@@ -257,7 +257,7 @@ export class CrossReachService {
       totalDeduplicatedReach = countryRows[0].crossReach ?? 0;
       averageReachPercent = countryRows[0].crossReachPercentage ?? 0;
     } else {
-      // Cálculo Sainsbury regional conjunto para los países activos
+      // Cálculo multialcance regional conjunto para los países activos
       const aggregatedPlatforms: PlatformReach[] = [];
       platformTotals.forEach((reach, platformName) => {
         aggregatedPlatforms.push({ platformName, reach });
@@ -308,7 +308,7 @@ export class CrossReachService {
       headers.push(`${p} Reach`, `${p} %`);
     });
 
-    headers.push('% Cross Reach Final', 'Cross Reach Deduplicado (Sainsbury)');
+    headers.push('% Cross Reach Final', 'Cross Reach Neto Deduplicado');
 
     const csvRows: string[] = [headers.join(',')];
 

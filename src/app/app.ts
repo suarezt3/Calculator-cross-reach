@@ -6,6 +6,9 @@ import { KpiSummaryComponent } from './components/kpi-summary/kpi-summary.compon
 import { CrossReachService } from './services/cross-reach.service';
 import { CountryRow, PlatformReach, KpiSummary } from './models/platform.models';
 
+import { DocumentationModalComponent } from './components/documentation-modal/documentation-modal.component';
+import { ReportTableModalComponent } from './components/report-table-modal/report-table-modal.component';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -13,17 +16,23 @@ import { CountryRow, PlatformReach, KpiSummary } from './models/platform.models'
     CommonModule,
     PlatformFormComponent,
     ResultsTableComponent,
-    KpiSummaryComponent
+    KpiSummaryComponent,
+    DocumentationModalComponent,
+    ReportTableModalComponent
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']
 })
 export class AppComponent {
   title = 'Cross Reach Enterprise Studio';
-  subtitle = 'Multi-Platform Audience Deduplication & Sainsbury Media Planning Matrix';
+  subtitle = 'Multi-Platform Audience Deduplication & Media Planning Matrix';
 
   // Inicia limpio para pruebas directas del usuario
   tableData = signal<CountryRow[]>([]);
+
+  // Estados de modales
+  showDocModal = signal<boolean>(false);
+  showReportModal = signal<boolean>(false);
 
   constructor(public crossReachService: CrossReachService) {
     // Inicialización limpia
@@ -131,5 +140,21 @@ export class AppComponent {
 
   handleResetTable(): void {
     this.tableData.set([]);
+  }
+
+  openDocModal(): void {
+    this.showDocModal.set(true);
+  }
+
+  closeDocModal(): void {
+    this.showDocModal.set(false);
+  }
+
+  openReportModal(): void {
+    this.showReportModal.set(true);
+  }
+
+  closeReportModal(): void {
+    this.showReportModal.set(false);
   }
 }
