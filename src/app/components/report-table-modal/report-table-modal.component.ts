@@ -43,18 +43,70 @@ import { toBlob, toPng } from 'html-to-image';
               </button>
             </div>
 
-            <!-- Toggle de incluir mercados -->
-            <label class="toggle-label" title="Incluir u omitir Casaca / Latam en la tabla">
-              <input
-                type="checkbox"
-                [checked]="includeMarkets()"
-                (change)="includeMarkets.set(!includeMarkets())"
-                class="toggle-checkbox"
-              />
-              <span class="toggle-text">Incluir Mercados</span>
-            </label>
-
             <button type="button" class="btn-close" (click)="close.emit()" aria-label="Cerrar">✕</button>
+          </div>
+        </div>
+
+        <!-- Panel de Selección de Columnas (Países y Mercados) -->
+        <div class="column-selection-panel">
+          <div class="selection-panel-header">
+            <div class="panel-header-left">
+              <span class="selection-icon">🎯</span>
+              <span class="selection-title">Seleccionar columnas para la tabla:</span>
+              <span class="selection-badge">
+                {{ activeColumns().length }} de {{ allAvailableColumns().length }} seleccionados
+              </span>
+            </div>
+
+            <div class="quick-select-actions">
+              <button
+                type="button"
+                (click)="selectAllColumns()"
+                class="btn-quick-select"
+                title="Mostrar todas las columnas disponibles"
+              >
+                <span>✓ Marcar todos</span>
+              </button>
+              <button
+                type="button"
+                (click)="deselectAllColumns()"
+                class="btn-quick-select"
+                title="Desmarcar todas las columnas"
+              >
+                <span>✕ Desmarcar todos</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="chips-container">
+            @for (col of allAvailableColumns(); track getColumnKey(col)) {
+              @let key = getColumnKey(col);
+              @let isSelected = isColumnActive(key);
+              <button
+                type="button"
+                (click)="toggleColumn(key)"
+                class="country-chip"
+                [class.selected]="isSelected"
+                [class.is-market]="col.isMarket"
+                [title]="col.isMarket ? ('Mercado regional: ' + getCountryCode(col.country)) : ('País: ' + col.country)"
+              >
+                <span class="chip-checkbox" [class.checked]="isSelected" [class.market-check]="col.isMarket">
+                  @if (isSelected) {
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="chip-check-svg">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  }
+                </span>
+
+                <span class="chip-code">{{ getCountryCode(col.country) }}</span>
+
+                @if (!col.isMarket) {
+                  <span class="chip-name">{{ col.country }}</span>
+                } @else {
+                  <span class="chip-market-badge">REGIONAL</span>
+                }
+              </button>
+            }
           </div>
         </div>
 
@@ -70,7 +122,7 @@ import { toBlob, toPng } from 'html-to-image';
               type="button"
               class="btn-action btn-copy"
               (click)="copyImageToClipboard()"
-              [disabled]="isExporting()"
+              [disabled]="isExporting() || activeColumns().length === 0"
               title="Copiar imagen al portapapeles"
             >
               <span>{{ copyStatus() }}</span>
@@ -80,7 +132,7 @@ import { toBlob, toPng } from 'html-to-image';
               type="button"
               class="btn-action btn-download"
               (click)="downloadAsPng()"
-              [disabled]="isExporting()"
+              [disabled]="isExporting() || activeColumns().length === 0"
               title="Descargar imagen en formato PNG"
             >
               <span>📥 Descargar PNG</span>
@@ -90,6 +142,7 @@ import { toBlob, toPng } from 'html-to-image';
               type="button"
               class="btn-action btn-excel"
               (click)="copyAsSpreadsheetTsv()"
+              [disabled]="activeColumns().length === 0"
               title="Copiar celdas de texto para Excel o Google Sheets"
             >
               <span>📋 Copiar Datos (Excel)</span>
@@ -107,61 +160,78 @@ import { toBlob, toPng } from 'html-to-image';
 
         <!-- Lienzo de la Tabla para Captura -->
         <div class="table-preview-scroll">
-          <div class="screenshot-canvas-wrapper" #tableCanvasContainer>
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <!-- Celda esquina superior izquierda -->
-                  <th class="corner-cell"></th>
-                  <!-- Cabeceras de Países / Mercados -->
-                  @for (col of activeColumns(); track col.country) {
-                    <th class="country-header-cell">
-                      {{ getCountryCode(col.country) }}
-                    </th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Filas de Plataformas -->
-                @for (platformName of activePlatforms(); track platformName) {
+          @if (activeColumns().length === 0) {
+            <div class="empty-columns-state">
+              <div class="empty-icon">🗺️</div>
+              <h3 class="empty-title">Ningún país o mercado seleccionado</h3>
+              <p class="empty-desc">
+                Haz clic en los chips superiores para seleccionar qué columnas deseas incluir en el reporte, o pulsa el botón siguiente:
+              </p>
+              <button
+                type="button"
+                class="btn-restore-selection"
+                (click)="selectAllColumns()"
+              >
+                <span>✓ Seleccionar todos los países</span>
+              </button>
+            </div>
+          } @else {
+            <div class="screenshot-canvas-wrapper" #tableCanvasContainer>
+              <table class="report-table">
+                <thead>
                   <tr>
-                    <td class="platform-row-header">{{ platformName }}</td>
+                    <!-- Celda esquina superior izquierda -->
+                    <th class="corner-cell"></th>
+                    <!-- Cabeceras de Países / Mercados -->
                     @for (col of activeColumns(); track col.country) {
-                      <td class="data-cell">
-                        {{ formatPercentage(getPlatformReachPercent(col, platformName)) }}
+                      <th class="country-header-cell">
+                        {{ getCountryCode(col.country) }}
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filas de Plataformas -->
+                  @for (platformName of activePlatforms(); track platformName) {
+                    <tr>
+                      <td class="platform-row-header">{{ platformName }}</td>
+                      @for (col of activeColumns(); track col.country) {
+                        <td class="data-cell">
+                          {{ formatPercentage(getPlatformReachPercent(col, platformName)) }}
+                        </td>
+                      }
+                    </tr>
+                  }
+
+                  <!-- Fila: Volumen total -->
+                  <tr class="summary-row-volume">
+                    <td class="summary-label">Volumen total</td>
+                    @for (col of activeColumns(); track col.country) {
+                      <td class="data-cell-volume">
+                        {{ formatVolume(col.crossReach ?? 0) }}
                       </td>
                     }
                   </tr>
-                }
 
-                <!-- Fila: Volumen total -->
-                <tr class="summary-row-volume">
-                  <td class="summary-label">Volumen total</td>
-                  @for (col of activeColumns(); track col.country) {
-                    <td class="data-cell-volume">
-                      {{ formatVolume(col.crossReach ?? 0) }}
-                    </td>
-                  }
-                </tr>
-
-                <!-- Fila: Total % -->
-                <tr class="summary-row-total">
-                  <td class="summary-label">Total %</td>
-                  @for (col of activeColumns(); track col.country) {
-                    <td class="data-cell-total">
-                      {{ formatPercentage(col.crossReachPercentage ?? 0) }}
-                    </td>
-                  }
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  <!-- Fila: Total % -->
+                  <tr class="summary-row-total">
+                    <td class="summary-label">Total %</td>
+                    @for (col of activeColumns(); track col.country) {
+                      <td class="data-cell-total">
+                        {{ formatPercentage(col.crossReachPercentage ?? 0) }}
+                      </td>
+                    }
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
 
         <!-- Footer -->
         <div class="modal-footer">
           <span class="footer-note">
-            Visualización con estilo idéntico al reporte ejecutivo (resolución optimizada para copiado nítido a 2x).
+            Tipografía Plus Jakarta Sans y diseño idéntico al reporte ejecutivo (resolución 2.5x optimizada para copiado nítido).
           </span>
           <button type="button" class="btn-done" (click)="close.emit()">
             Listo
@@ -187,7 +257,7 @@ import { toBlob, toPng } from 'html-to-image';
       background: #ffffff;
       border-radius: 16px;
       width: 100%;
-      max-width: 980px;
+      max-width: 1020px;
       max-height: 92vh;
       display: flex;
       flex-direction: column;
@@ -213,7 +283,7 @@ import { toBlob, toPng } from 'html-to-image';
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 16px;
-      padding: 20px 24px;
+      padding: 18px 24px;
       border-bottom: 1px solid #e2e8f0;
       background: #f8fafc;
     }
@@ -282,25 +352,6 @@ import { toBlob, toPng } from 'html-to-image';
       }
     }
 
-    .toggle-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      cursor: pointer;
-      user-select: none;
-      background: #f1f5f9;
-      padding: 5px 10px;
-      border-radius: 8px;
-    }
-
-    .toggle-checkbox {
-      cursor: pointer;
-      accent-color: #2563eb;
-    }
-
     .btn-close {
       background: transparent;
       border: 1px solid #cbd5e1;
@@ -319,6 +370,179 @@ import { toBlob, toPng } from 'html-to-image';
         background: #f1f5f9;
         color: #0f172a;
       }
+    }
+
+    /* Panel de selección interactiva de columnas */
+    .column-selection-panel {
+      padding: 14px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .selection-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .panel-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .selection-icon {
+      font-size: 15px;
+    }
+
+    .selection-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .selection-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #2563eb;
+      background: #dbeafe;
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    .quick-select-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-quick-select {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #94a3b8;
+      }
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .country-chip {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+
+      &:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+      }
+
+      &.selected {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
+
+        .chip-code {
+          color: #1d4ed8;
+        }
+
+        .chip-name {
+          color: #3b82f6;
+        }
+      }
+
+      &.is-market {
+        border-style: dashed;
+        border-color: #c084fc;
+
+        &.selected {
+          border-style: solid;
+          background: #faf5ff;
+          border-color: #9333ea;
+          box-shadow: 0 1px 2px rgba(147, 51, 234, 0.12);
+
+          .chip-code {
+            color: #7e22ce;
+          }
+        }
+      }
+    }
+
+    .chip-checkbox {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid #94a3b8;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+
+      &.checked {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+      }
+
+      &.checked.market-check {
+        background: #9333ea;
+        border-color: #9333ea;
+      }
+    }
+
+    .chip-check-svg {
+      width: 12px;
+      height: 12px;
+      stroke-width: 1;
+    }
+
+    .chip-code {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #334155;
+      letter-spacing: 0.02em;
+    }
+
+    .chip-name {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .chip-market-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: #7e22ce;
+      background: #f3e8ff;
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
     }
 
     .export-toolbar {
@@ -360,7 +584,7 @@ import { toBlob, toPng } from 'html-to-image';
       gap: 6px;
 
       &:disabled {
-        opacity: 0.6;
+        opacity: 0.45;
         cursor: not-allowed;
       }
 
@@ -388,7 +612,7 @@ import { toBlob, toPng } from 'html-to-image';
         color: #334155;
         border: 1px solid #cbd5e1;
 
-        &:hover {
+        &:hover:not(:disabled) {
           background: #e2e8f0;
           color: #0f172a;
         }
@@ -414,11 +638,59 @@ import { toBlob, toPng } from 'html-to-image';
     }
 
     .table-preview-scroll {
-      padding: 32px 24px;
+      padding: 28px 24px;
       background: #f8fafc;
       overflow-x: auto;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
+      min-height: 240px;
+    }
+
+    /* Estado vacío si no hay columnas seleccionadas */
+    .empty-columns-state {
+      background: #ffffff;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 36px 32px;
+      text-align: center;
+      max-width: 480px;
+      margin: auto;
+    }
+
+    .empty-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 6px;
+    }
+
+    .empty-desc {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0 0 16px;
+      line-height: 1.5;
+    }
+
+    .btn-restore-selection {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: #1d4ed8;
+      }
     }
 
     /* Contenedor exacto para captura de pantalla */
@@ -428,10 +700,10 @@ import { toBlob, toPng } from 'html-to-image';
       border-radius: 8px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
       display: inline-block;
-      min-width: 480px;
+      min-width: 420px;
     }
 
-    /* Tabla con estilo idéntico a la imagen adjunta */
+    /* Tabla con estilo corporativo Plus Jakarta Sans */
     .report-table {
       border-collapse: collapse;
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -451,7 +723,7 @@ import { toBlob, toPng } from 'html-to-image';
     }
 
     .country-header-cell {
-      background-color: #B8D4EE !important; /* Azul pastel de la imagen */
+      background-color: #B8D4EE !important; /* Azul pastel corporativo */
       color: #0f172a !important;
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
       font-size: 15px;
@@ -526,6 +798,8 @@ import { toBlob, toPng } from 'html-to-image';
       padding: 16px 24px;
       border-top: 1px solid #e2e8f0;
       background: #f8fafc;
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .footer-note {
@@ -550,18 +824,35 @@ import { toBlob, toPng } from 'html-to-image';
   `]
 })
 export class ReportTableModalComponent {
-  @Input() rows: CountryRow[] = [];
+  private _rows = signal<CountryRow[]>([]);
+
+  @Input() set rows(val: CountryRow[]) {
+    const list = val || [];
+    this._rows.set(list);
+    // Inicializar selección con todas las columnas disponibles al cargar
+    if (!this.initializedSelection && list.length > 0) {
+      const allKeys = new Set(list.map(r => this.getColumnKey(r)));
+      this.selectedColumnKeys.set(allKeys);
+      this.initializedSelection = true;
+    }
+  }
+  get rows(): CountryRow[] {
+    return this._rows();
+  }
+
   @Output() close = new EventEmitter<void>();
 
   @ViewChild('tableCanvasContainer') tableContainer!: ElementRef<HTMLDivElement>;
 
   decimals = signal<number>(0);
-  includeMarkets = signal<boolean>(false);
   isExporting = signal<boolean>(false);
   copyStatus = signal<string>('📷 Copiar Imagen');
   toastMessage = signal<string | null>(null);
 
-  // Mapeo oficial de códigos de 3 letras
+  private initializedSelection = false;
+  selectedColumnKeys = signal<Set<string>>(new Set());
+
+  // Mapeo oficial de códigos de 3 letras y mercados en mayúsculas
   private readonly countryCodeMap: { [key: string]: string } = {
     'colombia': 'COL',
     'chile': 'CHL',
@@ -585,12 +876,14 @@ export class ReportTableModalComponent {
     'latam': 'LATAM'
   };
 
+  allAvailableColumns = computed(() => {
+    return this._rows();
+  });
+
   activeColumns = computed(() => {
-    const list = this.rows || [];
-    if (this.includeMarkets()) {
-      return list;
-    }
-    return list.filter(r => !r.isMarket);
+    const list = this._rows();
+    const selected = this.selectedColumnKeys();
+    return list.filter(r => selected.has(this.getColumnKey(r)));
   });
 
   activePlatforms = computed(() => {
@@ -615,6 +908,35 @@ export class ReportTableModalComponent {
     set.forEach(p => sorted.push(p));
     return sorted;
   });
+
+  getColumnKey(col: CountryRow): string {
+    return col.id || col.country.trim().toLowerCase();
+  }
+
+  isColumnActive(key: string): boolean {
+    return this.selectedColumnKeys().has(key);
+  }
+
+  toggleColumn(key: string): void {
+    this.selectedColumnKeys.update(current => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  selectAllColumns(): void {
+    const all = new Set(this.allAvailableColumns().map(c => this.getColumnKey(c)));
+    this.selectedColumnKeys.set(all);
+  }
+
+  deselectAllColumns(): void {
+    this.selectedColumnKeys.set(new Set());
+  }
 
   getCountryCode(country: string): string {
     const norm = (country || '').trim().toLowerCase();
@@ -648,43 +970,44 @@ export class ReportTableModalComponent {
   }
 
   async copyImageToClipboard(): Promise<void> {
-    if (!this.tableContainer?.nativeElement) return;
+    if (!this.tableContainer?.nativeElement || this.activeColumns().length === 0) return;
     this.isExporting.set(true);
-    this.copyStatus.set('⏳ Copiando...');
+    this.copyStatus.set('Generando imagen...');
 
     try {
       const node = this.tableContainer.nativeElement;
       const blob = await toBlob(node, {
-        pixelRatio: 2.5, // Ultra nítido para Retina y presentaciones
+        pixelRatio: 2.5,
         backgroundColor: '#ffffff'
       });
 
-      if (!blob) throw new Error('No se pudo generar el blob de la imagen');
-
-      // Intentar copiar con Clipboard API estándar
-      if (navigator.clipboard && 'write' in navigator.clipboard) {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        this.showToast('¡Imagen copiada al portapapeles! Lista para pegar (Ctrl+V) en tu presentación.');
-      } else {
-        // Fallback: descarga directa si el portapapeles no tiene permisos
-        this.downloadBlob(blob, 'tabla_reporte_multialcance.png');
-        this.showToast('Imagen descargada (tu navegador no permite acceso directo al portapapeles).');
+      if (!blob) {
+        throw new Error('No se pudo generar el Blob de la imagen');
       }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+
+      this.copyStatus.set('✓ ¡Copiada!');
+      this.showToast('¡Imagen copiada al portapapeles! Puedes pegarla con Ctrl+V.');
+      setTimeout(() => {
+        this.copyStatus.set('📷 Copiar Imagen');
+      }, 3000);
     } catch (err) {
       console.error('Error al copiar imagen:', err);
-      // Fallback a descarga si falla la API
-      await this.downloadAsPng();
-      this.showToast('Imagen guardada como archivo PNG.');
+      this.copyStatus.set('Error al copiar');
+      this.showToast('No se pudo copiar automáticamente. Usa "Descargar PNG".');
+      setTimeout(() => {
+        this.copyStatus.set('📷 Copiar Imagen');
+      }, 3000);
     } finally {
       this.isExporting.set(false);
-      this.copyStatus.set('📷 Copiar Imagen');
     }
   }
 
   async downloadAsPng(): Promise<void> {
-    if (!this.tableContainer?.nativeElement) return;
+    if (!this.tableContainer?.nativeElement || this.activeColumns().length === 0) return;
     this.isExporting.set(true);
 
     try {
@@ -711,6 +1034,7 @@ export class ReportTableModalComponent {
 
   copyAsSpreadsheetTsv(): void {
     const cols = this.activeColumns();
+    if (cols.length === 0) return;
     const platforms = this.activePlatforms();
 
     // Fila cabecera
@@ -729,29 +1053,24 @@ export class ReportTableModalComponent {
     ].join('\t');
 
     // Fila total %
-    const totalRow = [
+    const totalPercentRow = [
       'Total %',
       ...cols.map(c => this.formatPercentage(c.crossReachPercentage ?? 0))
     ].join('\t');
 
-    const tsv = [...header, ...body, volumeRow, totalRow].join('\n');
+    const tsvContent = [
+      ...header,
+      ...body,
+      volumeRow,
+      totalPercentRow
+    ].join('\n');
 
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(tsv).then(() => {
-        this.showToast('¡Datos copiados! Pégalos directamente en celdas de Excel o Google Sheets.');
-      });
-    }
-  }
-
-  private downloadBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    navigator.clipboard.writeText(tsvContent).then(() => {
+      this.showToast('¡Datos copiados! Pégalos directamente en Excel o Google Sheets.');
+    }).catch(err => {
+      console.error('Error al copiar TSV:', err);
+      this.showToast('Error al copiar datos en formato Excel.');
+    });
   }
 
   private showToast(msg: string): void {

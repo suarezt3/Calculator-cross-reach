@@ -1,6 +1,6 @@
 {
-  "summary": "Plan de ajuste para la tipografía corporativa 'Plus Jakarta Sans' en la tabla de reporte y visualización de nombres completos en mayúsculas 'CASACA' y 'LATAM' para mercados regionales.",
-  "updatedAt": "2026-09-30T02:35:45.771736930Z",
-  "requestFeedback": true,
-  "userFacing": true
+  "summary":  "Plan de implementación para habilitar selección dinámica de países y mercados mediante chips interactivos en la tabla de reporte.",
+  "updatedAt":  "2026-09-30T15:59:10.816197302Z",
+  "requestFeedback":  true,
+  "userFacing":  true
 }

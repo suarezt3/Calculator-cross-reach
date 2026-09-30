@@ -1,41 +1,57 @@
-# Ajuste Tipográfico 'Plus Jakarta Sans' y Nombres Completos de Mercados
+# Selector Dinámico de Países y Mercados en Tabla de Reporte
 
-Actualización del estilo visual de la tabla condensada para reportes mediante la integración tipográfica de la fuente corporativa de alta legibilidad **Plus Jakarta Sans** (con numerales tabulares nítidos) y la presentación en mayúsculas completas de los mercados regionales agregados (**CASACA** y **LATAM** en lugar de códigos abreviados).
+Habilitación de una barra interactiva de selección de países y mercados regionales mediante chips con casillas de verificación en la **Tabla Resumen para Reporte**, permitiendo incluir o excluir columnas específicas antes de copiar o descargar la imagen.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
 > **Decisiones confirmadas por el usuario:**
-> - **Tipografía de la Tabla de Reporte:** Adopción formal de **Plus Jakarta Sans** para todos los encabezados y celdas de la tabla (emparejada con alineación `tabular-nums` para los datos porcentuales y de volumen).
-> - **Visualización de Mercados Agregados:** Mostrar el nombre completo en mayúsculas: **CASACA** y **LATAM** (reemplazando `CAS` y `LAT`), manteniendo los códigos de 3 letras para los países individuales (`COL`, `CHL`, `PER`, `CRI`, etc.).
+> - **Tipo de Control:** Chips interactivos con casillas de verificación (checkbox) individuales para activar o desactivar cada país con un solo clic.
+> - **Gestión de Mercados:** Los mercados agregados (**CASACA** y **LATAM**) se integran directamente como chips seleccionables junto con los países individuales (con un distintivo sutil para diferenciarlos), eliminando interruptores secundarios redundantes.
+> - **Acciones Rápidas:** Botones de ayuda *"Seleccionar todos"* y *"Deseleccionar todos"* para agilizar la preparación de reportes enfocado en 1 o 2 países.
 
 ---
 
 ## 1. Overview & Core Concept
 
-- **Alineación Visual y Claridad:** Los reportes ejecutivos destinados a clientes y comités directivos requieren máxima claridad semántica. Mientras que los países se reconocen universalmente por sus códigos ISO de 3 letras (`COL`, `CHL`), los bloques comerciales (`Casaca` y `Latam`) necesitan mostrar su nombre completo (**CASACA** y **LATAM**) para evitar confusiones o interpretaciones erróneas.
-- **Tipografía Formal y Pulida:** Se aplicará formalmente la familia tipográfica **Plus Jakarta Sans** (importada con pesos 500, 600, 700 y 800), dotando a la tabla de una presencia limpia, moderna y con espaciado óptimo entre letras (`letter-spacing: -0.01em` en cabeceras y `0.02em` en mayúsculas), perfecta para capturas en presentaciones corporativas.
+Al generar reportes ejecutivos o capturas para clientes específicos, con frecuencia se necesita presentar únicamente una selección acotada (por ejemplo, solo `COL` y `PER`, o solo `MEX` y `LATAM`), sin necesidad de alterar los datos cargados en la tabla analítica general.
+
+La barra de selección de países dentro del modal de reporte permitirá:
+1. Ver de un vistazo qué columnas están activas en el reporte.
+2. Alternar la inclusión de cualquier país o mercado con un clic sobre su chip interactivo.
+3. Asegurar que al menos 1 columna permanezca seleccionada para mantener la validez visual de la tabla.
+4. Generar la imagen y el copiado a portapapeles/Excel considerando exclusivamente las columnas seleccionadas.
 
 ---
 
-## 2. User Experience & Visual Changes
+## 2. User Experience & Visual Layout
 
-1. **Encabezados de Columna:**
-   - Países individuales: Se mantienen los códigos de 3 letras (`COL`, `CHL`, `PER`, `CRI`, `MEX`, etc.) en negrita con fondo azul pastel `#B8D4EE`.
-   - Mercados regionales: Se muestran con su nombre íntegro en mayúsculas: **CASACA** y **LATAM**.
-2. **Tipografía Global de la Tabla:**
-   - Familia de fuente: `'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif`.
-   - Encabezado: Peso `700`, tamaño `15px`, color `#0a1f33`, contraste óptimo sobre `#B8D4EE`.
-   - Filas de plataforma y totales: Peso `600` para etiquetas y peso `500` con `tabular-nums` para cifras.
-   - Copia de imagen y descarga PNG mantendrán exactamente este renderizado vectorial nítido a 2.5x.
+### Componentes de la Interfaz:
+1. **Barra de Selección de Columnas (Chips Bar):**
+   - Ubicada directamente entre la barra de herramientas superior y el lienzo de vista previa de la tabla.
+   - Etiqueta explicativa: `Columnas visibles en el reporte (X seleccionadas):`
+   - Botones rápidos de conveniencia: `[Marcar todos]` y `[Desmarcar todos]`.
+   - **Chips de Países:** Chip con checkbox, código del país en negrita (`COL`, `CHL`, etc.) y nombre completo en subtítulo tooltip.
+   - **Chips de Mercados:** Chip con borde violeta/indigo distintivo y texto en mayúsculas (`CASACA`, `LATAM`).
+2. **Actualización Reactiva en Tiempo Real:**
+   - La tabla se reajusta inmediatamente al marcar o desmarcar chips.
+   - Si no hay ningún país seleccionado, se muestra un mensaje amigable invitando a marcar al menos una columna.
+3. **Persistencia dentro de la Sesión del Modal:**
+   - Por defecto, al abrir el modal se muestran todos los países disponibles seleccionados para conveniencia.
 
 ---
 
 ## 3. Plan de Tareas de Implementación
 
-1. **Actualización de Mapeo de Cabeceras en `ReportTableModalComponent`:**
-   - Ajustar `getCountryCode(country)` para que devuelva explícitamente `'CASACA'` cuando sea el mercado Casaca y `'LATAM'` cuando sea el mercado Latam.
-2. **Aplicación de Estilo Tipográfico:**
-   - Configurar la regla CSS `font-family: 'Plus Jakarta Sans', -apple-system, sans-serif` en `.report-table`, `.country-header-cell`, `.platform-row-header` y celdas numéricas.
-3. **Verificación y Pruebas:**
-   - Ejecutar `compile_applet` y validar que el dev server compile sin advertencias.
+1. **Estado Reactivo en `ReportTableModalComponent`:**
+   - Crear un signal `selectedCountryIds = signal<Set<string>>(new Set())` para registrar qué países/mercados están activos.
+   - Inicializar el conjunto con todos los países y mercados disponibles al recibir los datos.
+   - Métodos: `toggleColumn(id: string)`, `selectAll()`, `deselectAll()`.
+2. **Filtrado Reactivo de Columnas (`activeColumns`):**
+   - Actualizar el computed `activeColumns` para filtrar según `selectedCountryIds()`.
+3. **Template HTML y Estilos SCSS de los Chips:**
+   - Diseñar chips modernos con checkbox interactivo, estados hover, active y focus accesibles.
+   - Estilo diferenciado para mercados regionales (borde acentuado).
+4. **Verificación y Pruebas:**
+   - Probar selección múltiple, copiado de imagen PNG, copiado de datos TSV a Excel y descarga con subconjuntos de países.
+   - Ejecutar `compile_applet` para garantizar cero errores de TypeScript y AOT.
