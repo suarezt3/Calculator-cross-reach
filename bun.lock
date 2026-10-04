@@ -11,6 +11,8 @@
         "@angular/forms": "^22.0.0",
         "@angular/platform-browser": "^22.0.0",
         "@angular/router": "^22.0.0",
+        "@hugeicons/angular": "^1.0.12",
+        "@hugeicons/core-free-icons": "^4.3.5",
         "html-to-image": "^1.11.13",
         "rxjs": "~7.8.0",
         "tslib": "^2.3.0",
@@ -162,6 +164,10 @@
     "@exodus/bytes": ["@exodus/bytes@1.16.0", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-IcpW84uEn3N7ETtNZMlxKhfl6Pec8rUNGOTBtWbK1FKhJxIFAptZyVrvVRVBimAJxJCgc3PxepxkdWWG4DVzfA=="],
 
     "@harperfast/extended-iterable": ["@harperfast/extended-iterable@1.0.3", "", {}, "sha512-sSAYhQca3rDWtQUHSAPeO7axFIUJOI6hn1gjRC5APVE1a90tuyT8f5WIgRsFhhWA7htNkju2veB9eWL6YHi/Lw=="],
+
+    "@hugeicons/angular": ["@hugeicons/angular@1.0.12", "", { "dependencies": { "tslib": "^2.6.0" }, "peerDependencies": { "@angular/common": ">=17.1.0 <23.0.0", "@angular/core": ">=17.1.0 <23.0.0" } }, "sha512-ql3oXP13hwrpJKX4/rxnGlk46XQl9bYHubNLfTpXrkS9L1W116pEvagdtOhLLwjWQpuHOcLUZNb0sj1Sl1/hTw=="],
+
+    "@hugeicons/core-free-icons": ["@hugeicons/core-free-icons@4.3.5", "", {}, "sha512-Sv+NjHRPnQk+yZsGCMcGznCHdTfJR9PMMOEKcJYAQU4gy90dmlc9PwdtvYOImBZIjiheMsTLL5eMn2DmHxUiUg=="],
 
     "@inquirer/ansi": ["@inquirer/ansi@2.0.8", "", {}, "sha512-WpQM+Ti6Z40EFwwt+uL2p4UabT+W179zHp6HhLVOzfbwnVn05IPO/eXIZXGNqcT1jbQ15SujNLzQ39k4QPPxBQ=="],
 

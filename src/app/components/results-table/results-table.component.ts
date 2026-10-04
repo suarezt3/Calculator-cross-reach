@@ -5,10 +5,22 @@ import { CountryRow, PlatformReach, PLATFORM_COLORS, PLATFORM_BG_TINTS } from '.
 import { CrossReachService } from '../../services/cross-reach.service';
 import { PlatformIconComponent } from '../../shared/components/platform-icon/platform-icon.component';
 
+import { HugeiconsIconComponent } from '@hugeicons/angular';
+import {
+  FloppyDiskIcon,
+  Camera01Icon,
+  Download01Icon,
+  Search01Icon,
+  Cancel01Icon,
+  Edit02Icon,
+  Delete02Icon,
+  Tick02Icon
+} from '@hugeicons/core-free-icons';
+
 @Component({
   selector: 'app-results-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, PlatformIconComponent],
+  imports: [CommonModule, FormsModule, PlatformIconComponent, HugeiconsIconComponent],
   templateUrl: './results-table.component.html',
   styleUrls: ['./results-table.component.scss']
 })
@@ -21,6 +33,16 @@ export class ResultsTableComponent {
   @Output() editRow = new EventEmitter<CountryRow>();
   @Output() deleteRow = new EventEmitter<string>();
   @Output() openReportModal = new EventEmitter<void>();
+  @Output() openSaveModal = new EventEmitter<void>();
+
+  readonly FloppyDiskIcon = FloppyDiskIcon;
+  readonly Camera01Icon = Camera01Icon;
+  readonly Download01Icon = Download01Icon;
+  readonly Search01Icon = Search01Icon;
+  readonly Cancel01Icon = Cancel01Icon;
+  readonly Edit02Icon = Edit02Icon;
+  readonly Delete02Icon = Delete02Icon;
+  readonly Tick02Icon = Tick02Icon;
 
   tableData = signal<CountryRow[]>([]);
   uniquePlatforms = signal<string[]>([]);

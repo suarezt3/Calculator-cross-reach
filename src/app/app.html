@@ -19,38 +19,76 @@
       </div>
 
       <div class="topbar-actions">
+        <!-- Motor de Deduplicación Status -->
         <div class="system-status">
           <span class="status-indicator"></span>
-          <span class="status-text">Motor Deduplicación Activo</span>
+          <span class="status-text">Motor Activo</span>
         </div>
 
-        <!-- Botón Documentación del Cálculo -->
-        <button
-          type="button"
-          (click)="openDocModal()"
-          class="btn-topbar-doc"
-          title="Ver documentación técnica y fundamentos del cálculo"
-        >
-          <span>📖 Documentación</span>
-        </button>
+        <!-- Grupo 1: Gestión de Escenarios en la Nube -->
+        <div class="action-group" title="Gestión de Escenarios en la Nube">
+          <button
+            type="button"
+            (click)="openSaveModal()"
+            class="btn-topbar-save"
+            [disabled]="tableData().length === 0"
+            title="Guardar escenario actual en la nube con nombre personalizado"
+          >
+            <hugeicons-icon [icon]="FloppyDiskIcon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+            <span>Guardar Escenario</span>
+          </button>
 
-        <button
-          type="button"
-          (click)="loadInitialDemoData()"
-          class="btn-topbar-secondary"
-          title="Cargar escenario multicountry de ejemplo"
-        >
-          <span>🔄 Cargar Demo</span>
-        </button>
+          <button
+            type="button"
+            (click)="openDrawer()"
+            class="btn-topbar-scenarios"
+            title="Ver y recuperar escenarios guardados en la nube"
+          >
+            <hugeicons-icon [icon]="Folder01Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+            <span>Escenarios</span>
+            <span class="topbar-badge">{{ scenarioService.scenariosCount() }}</span>
+          </button>
+        </div>
 
-        <button
-          type="button"
-          (click)="handleResetTable()"
-          class="btn-topbar-danger"
-          title="Limpiar todos los datos"
-        >
-          <span>🗑️ Restablecer</span>
-        </button>
+        <div class="topbar-divider" aria-hidden="true"></div>
+
+        <!-- Grupo 2: Control de Datos y Demostración -->
+        <div class="action-group" title="Acciones de la Matriz Activa">
+          <button
+            type="button"
+            (click)="loadInitialDemoData()"
+            class="btn-topbar-secondary"
+            title="Cargar escenario multicountry con universos oficiales"
+          >
+            <hugeicons-icon [icon]="RefreshIcon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+            <span>Cargar Demo</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="handleResetTable()"
+            class="btn-topbar-danger"
+            title="Limpiar todos los datos de la matriz activa"
+          >
+            <hugeicons-icon [icon]="Delete02Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+            <span>Restablecer</span>
+          </button>
+        </div>
+
+        <div class="topbar-divider" aria-hidden="true"></div>
+
+        <!-- Grupo 3: Referencia y Ayuda -->
+        <div class="action-group" title="Documentación y Fundamentos Técnicos">
+          <button
+            type="button"
+            (click)="openDocModal()"
+            class="btn-topbar-doc"
+            title="Ver documentación técnica y fundamentos del cálculo"
+          >
+            <hugeicons-icon [icon]="BookOpen01Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+            <span>Documentación</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -72,6 +110,7 @@
       (editRow)="handleEditRow($event)"
       (deleteRow)="handleDeleteRow($event)"
       (openReportModal)="openReportModal()"
+      (openSaveModal)="openSaveModal()"
     ></app-results-table>
   </main>
 
@@ -102,5 +141,35 @@
       [rows]="displayData()"
       (close)="closeReportModal()"
     ></app-report-table-modal>
+  }
+
+  <!-- Modal para Guardar Escenario en la Nube -->
+  @if (showSaveModal()) {
+    <app-save-scenario-modal
+      [rows]="tableData()"
+      (close)="closeSaveModal()"
+      (saved)="handleScenarioSaved($event)"
+    ></app-save-scenario-modal>
+  }
+
+  <!-- Drawer Lateral de Escenarios Guardados -->
+  @if (showDrawer()) {
+    <app-scenario-drawer
+      [currentRows]="tableData()"
+      (close)="closeDrawer()"
+      (load)="handleScenarioLoaded($event)"
+      (requestSaveCurrent)="closeDrawer(); openSaveModal()"
+    ></app-scenario-drawer>
+  }
+
+  <!-- Notificación Toast Flotante -->
+  @if (toastMessage()) {
+    <div class="app-toast-banner">
+      <hugeicons-icon [icon]="Tick02Icon" [size]="18" [strokeWidth]="2" color="#10b981"></hugeicons-icon>
+      <span class="toast-text">{{ toastMessage() }}</span>
+      <button type="button" class="toast-close" (click)="toastMessage.set(null)" aria-label="Cerrar notificación">
+        <hugeicons-icon [icon]="Cancel01Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+      </button>
+    </div>
   }
 </div>

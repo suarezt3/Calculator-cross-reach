@@ -32,6 +32,15 @@ export const AVAILABLE_PLATFORMS = [
   'Display'
 ];
 
+// Universos oficiales confirmados para planificación de medios
+export const DEFAULT_COUNTRY_UNIVERSES: Record<string, number> = {
+  'Colombia': 27000000,
+  'Chile': 9500000,
+  'Peru': 18500000,
+  'Costa Rica': 3500000,
+  'Mexico': 53000000
+};
+
 // Colores corporativos y representativos de cada plataforma
 export const PLATFORM_COLORS: Record<string, string> = {
   'Meta': '#0064E0',

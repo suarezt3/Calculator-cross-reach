@@ -1,6 +1,6 @@
 {
-  "summary":  "Plan de implementación para habilitar selección dinámica de países y mercados mediante chips interactivos en la tabla de reporte.",
-  "updatedAt":  "2026-09-30T15:59:10.816197302Z",
+  "summary":  "Plan para simplificar los botones de acción en la tabla con Hugeicons, resolver la persistencia de eliminación en la nube y reemplazar la marca Supabase por 'En la nube'.",
+  "updatedAt":  "2026-10-04T15:15:31.743106351Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

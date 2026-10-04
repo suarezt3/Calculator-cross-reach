@@ -15,11 +15,11 @@ export interface CountryPopulationHint {
 }
 
 export const COUNTRY_POPULATION_DATA: CountryPopulationHint[] = [
-  { name: 'Mexico', defaultUniverse: 92000000 },
-  { name: 'Colombia', defaultUniverse: 39500000 },
-  { name: 'Peru', defaultUniverse: 24500000 },
-  { name: 'Chile', defaultUniverse: 16800000 },
-  { name: 'Costa Rica', defaultUniverse: 4200000 }
+  { name: 'Colombia', defaultUniverse: 27000000 },
+  { name: 'Chile', defaultUniverse: 9500000 },
+  { name: 'Peru', defaultUniverse: 18500000 },
+  { name: 'Costa Rica', defaultUniverse: 3500000 },
+  { name: 'Mexico', defaultUniverse: 53000000 }
 ];
 
 export const AVAILABLE_COUNTRIES = COUNTRY_POPULATION_DATA.map(c => c.name);
@@ -63,11 +63,10 @@ export class PlatformFormComponent {
     this.country.set(countryName);
     this.errorMessage.set(null);
 
-    if (!this.universe() || this.universe() === 0) {
-      const match = COUNTRY_POPULATION_DATA.find(c => c.name === countryName);
-      if (match) {
-        this.universe.set(match.defaultUniverse);
-      }
+    // Cargar por defecto el valor de universo oficial confirmado (editable)
+    const match = COUNTRY_POPULATION_DATA.find(c => c.name === countryName);
+    if (match) {
+      this.universe.set(match.defaultUniverse);
     }
   }
 

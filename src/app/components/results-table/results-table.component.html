@@ -15,7 +15,7 @@
       <!-- Buscador -->
       @if (tableData().length > 0) {
         <div class="search-box">
-          <span class="search-icon">🔍</span>
+          <hugeicons-icon [icon]="Search01Icon" [size]="15" [strokeWidth]="1.8" color="#94a3b8"></hugeicons-icon>
           <input
             type="text"
             [ngModel]="searchTerm()"
@@ -24,9 +24,22 @@
             class="search-input"
           />
           @if (searchTerm()) {
-            <button type="button" (click)="searchTerm.set('')" class="search-clear-btn">✕</button>
+            <button type="button" (click)="searchTerm.set('')" class="search-clear-btn" aria-label="Limpiar filtro">
+              <hugeicons-icon [icon]="Cancel01Icon" [size]="12" [strokeWidth]="2"></hugeicons-icon>
+            </button>
           }
         </div>
+
+        <!-- Botón Guardar Escenario en la Nube -->
+        <button
+          type="button"
+          (click)="openSaveModal.emit()"
+          class="btn-save-scenario"
+          title="Guardar este escenario en la nube para consultarlo o reanudarlo cuando desees"
+        >
+          <hugeicons-icon [icon]="FloppyDiskIcon" [size]="15" [strokeWidth]="2"></hugeicons-icon>
+          <span>Guardar Escenario</span>
+        </button>
 
         <!-- Botón Tabla para Reporte (Screenshot / Copiar) -->
         <button
@@ -35,7 +48,8 @@
           class="btn-report-table"
           title="Abrir tabla condensada para capturas y reportes ejecutivos"
         >
-          <span>📸 Tabla para Reporte</span>
+          <hugeicons-icon [icon]="Camera01Icon" [size]="15" [strokeWidth]="1.8"></hugeicons-icon>
+          <span>Tabla para Reporte</span>
         </button>
 
         <!-- Botón Exportar CSV -->
@@ -45,7 +59,8 @@
           class="btn-export-csv"
           title="Descargar matriz en formato CSV para Excel / Google Sheets"
         >
-          <span>📥 Exportar CSV</span>
+          <hugeicons-icon [icon]="Download01Icon" [size]="15" [strokeWidth]="1.8"></hugeicons-icon>
+          <span>Exportar CSV</span>
         </button>
       }
     </div>
@@ -143,18 +158,20 @@
                     <button
                       type="button"
                       (click)="saveEdit(row)"
-                      class="btn-save-edit"
-                      title="Guardar cambios"
+                      class="btn-row-action save"
+                      title="Guardar cambios de {{ row.country }}"
+                      aria-label="Guardar cambios"
                     >
-                      ✓ Guardar
+                      <hugeicons-icon [icon]="Tick02Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
                     </button>
                     <button
                       type="button"
                       (click)="cancelEdit()"
-                      class="btn-cancel-edit"
-                      title="Cancelar"
+                      class="btn-row-action cancel"
+                      title="Cancelar edición"
+                      aria-label="Cancelar edición"
                     >
-                      ✕
+                      <hugeicons-icon [icon]="Cancel01Icon" [size]="15" [strokeWidth]="2"></hugeicons-icon>
                     </button>
                   </div>
                 </td>
@@ -229,18 +246,20 @@
                       <button
                         type="button"
                         (click)="startEdit(row)"
-                        class="btn-row-edit"
+                        class="btn-row-action edit"
                         title="Editar valores de {{ row.country }}"
+                        aria-label="Editar valores de {{ row.country }}"
                       >
-                        ✏️ Editar
+                        <hugeicons-icon [icon]="Edit02Icon" [size]="15" [strokeWidth]="1.8"></hugeicons-icon>
                       </button>
                       <button
                         type="button"
                         (click)="delete(row, $event)"
-                        class="btn-row-delete"
-                        title="Eliminar {{ row.country }}"
+                        class="btn-row-action delete"
+                        title="Eliminar {{ row.country }} de la matriz"
+                        aria-label="Eliminar {{ row.country }} de la matriz"
                       >
-                        🗑️ Eliminar
+                        <hugeicons-icon [icon]="Delete02Icon" [size]="15" [strokeWidth]="1.8"></hugeicons-icon>
                       </button>
                     </div>
                   } @else {
