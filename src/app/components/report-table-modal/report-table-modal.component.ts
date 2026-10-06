@@ -1983,6 +1983,7 @@ export class ReportTableModalComponent {
         backgroundColor: '#ffffff',
         width: width,
         height: height,
+        skipFonts: true,
         filter: (node: Node) => {
           if (node instanceof HTMLElement && node.classList.contains('no-export')) {
             return false;
@@ -2030,6 +2031,7 @@ export class ReportTableModalComponent {
         backgroundColor: '#ffffff',
         width: width,
         height: height,
+        skipFonts: true,
         filter: (node: Node) => {
           if (node instanceof HTMLElement && node.classList.contains('no-export')) {
             return false;
