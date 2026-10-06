@@ -1,6 +1,6 @@
 {
-  "summary": "Plan de implementación para unificar las tres vistas del reporte descargable: Matriz Multi-País (columnas seleccionables), Ficha Individual (MEDIO | REACH | % con iniciales COL, CHL, PER, CRI, MX) y Ver Todas en cuadrícula con ajuste dinámico de medios activos por territorio.",
-  "updatedAt": "2026-10-06T19:51:53.377819536Z",
+  "summary": "Plan de implementación para corregir la visualización y corte de la primera tabla en 'Ver Todas', unificar el ajuste de decimales a todos los porcentajes de la tabla (enteros 37% vs 2 decimales 37.20%), e incorporar botones de exportación individuales compactos (solo iconos) en cada tarjeta.",
+  "updatedAt": "2026-10-06T20:12:11.712287541Z",
   "requestFeedback": true,
   "userFacing": true
 }

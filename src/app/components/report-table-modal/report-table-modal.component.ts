@@ -2,6 +2,12 @@ import { Component, Input, Output, EventEmitter, signal, computed, ElementRef, V
 import { CommonModule } from '@angular/common';
 import { CountryRow, PlatformReach } from '../../models/platform.models';
 import { toBlob, toPng } from 'html-to-image';
+import { HugeiconsIconComponent } from '@hugeicons/angular';
+import {
+  Camera01Icon,
+  Download01Icon,
+  Copy01Icon
+} from '@hugeicons/core-free-icons';
 
 export interface MediaRowReport {
   name: string;
@@ -12,7 +18,7 @@ export interface MediaRowReport {
 @Component({
   selector: 'app-report-table-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HugeiconsIconComponent],
   template: `
     <div class="modal-backdrop" (click)="close.emit()">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
@@ -66,7 +72,7 @@ export interface MediaRowReport {
                   [class.active]="thousandsSeparator() === 'comma'"
                   (click)="thousandsSeparator.set('comma')"
                   class="seg-btn"
-                  title="Comas (19,716,710)"
+                  title="Comas: 19,716,710"
                 >
                   ,
                 </button>
@@ -75,30 +81,32 @@ export interface MediaRowReport {
                   [class.active]="thousandsSeparator() === 'dot'"
                   (click)="thousandsSeparator.set('dot')"
                   class="seg-btn"
-                  title="Puntos (19.716.710)"
+                  title="Puntos: 19.716.710"
                 >
                   .
                 </button>
               </div>
 
-              <div class="segmented-control" title="Decimales en Total %">
+              <!-- Control Global de Decimales en Porcentajes -->
+              <div class="segmented-control" title="Formato global de decimales en todos los porcentajes">
+                <span class="control-label">%:</span>
                 <button
                   type="button"
-                  [class.active]="totalDecimals() === 0"
-                  (click)="totalDecimals.set(0)"
+                  [class.active]="percentDecimals() === 0"
+                  (click)="percentDecimals.set(0)"
                   class="seg-btn"
-                  title="Enteros (64%)"
+                  title="Porcentajes enteros en toda la tabla (37%, 64%)"
                 >
-                  64%
+                  37%
                 </button>
                 <button
                   type="button"
-                  [class.active]="totalDecimals() === 2"
-                  (click)="totalDecimals.set(2)"
+                  [class.active]="percentDecimals() === 2"
+                  (click)="percentDecimals.set(2)"
                   class="seg-btn"
-                  title="Decimales (64.00%)"
+                  title="Dos decimales en toda la tabla (37.20%, 64.00%)"
                 >
-                  .00%
+                  37.20%
                 </button>
               </div>
             </div>
@@ -203,50 +211,52 @@ export interface MediaRowReport {
           <div class="grid-info-bar">
             <span>💡</span>
             <span>
-              Mostrando <strong>{{ availableTargets().length }} fichas ejecutivas</strong>. Cada una adaptada exclusivamente a sus medios activos.
+              Mostrando <strong>{{ availableTargets().length }} fichas ejecutivas</strong> adaptadas a sus medios activos. Puedes copiar o descargar cada tarjeta con sus botones dedicados.
             </span>
           </div>
         }
 
-        <!-- Toolbar de exportación común -->
-        <div class="export-toolbar">
-          <div class="toolbar-hint">
-            <span>💡</span>
-            <span>Usa <strong>Copiar Imagen</strong> para pegar directamente (Ctrl+V) en PowerPoint, Google Slides o Slack.</span>
+        <!-- Toolbar de exportación general (Activo para Matriz o Ficha Individual) -->
+        @if (viewMode() !== 'all_grid') {
+          <div class="export-toolbar">
+            <div class="toolbar-hint">
+              <span>💡</span>
+              <span>Usa <strong>Copiar Imagen</strong> para pegar directamente (Ctrl+V) en PowerPoint, Google Slides o Slack.</span>
+            </div>
+
+            <div class="btn-group">
+              <button
+                type="button"
+                class="btn-action btn-copy"
+                (click)="copyImageToClipboard()"
+                [disabled]="isExporting() || (viewMode() === 'multi_matrix' && activeColumns().length === 0)"
+                title="Copiar imagen al portapapeles"
+              >
+                <span>{{ copyStatus() }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-action btn-download"
+                (click)="downloadAsPng()"
+                [disabled]="isExporting() || (viewMode() === 'multi_matrix' && activeColumns().length === 0)"
+                title="Descargar imagen en formato PNG"
+              >
+                <span>📥 Descargar PNG</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-action btn-excel"
+                (click)="copyAsSpreadsheetTsv()"
+                [disabled]="viewMode() === 'multi_matrix' && activeColumns().length === 0"
+                title="Copiar celdas de texto para Excel o Google Sheets"
+              >
+                <span>📋 Copiar Datos (Excel)</span>
+              </button>
+            </div>
           </div>
-
-          <div class="btn-group">
-            <button
-              type="button"
-              class="btn-action btn-copy"
-              (click)="copyImageToClipboard()"
-              [disabled]="isExporting() || (viewMode() === 'multi_matrix' && activeColumns().length === 0)"
-              title="Copiar imagen al portapapeles"
-            >
-              <span>{{ copyStatus() }}</span>
-            </button>
-
-            <button
-              type="button"
-              class="btn-action btn-download"
-              (click)="downloadAsPng()"
-              [disabled]="isExporting() || (viewMode() === 'multi_matrix' && activeColumns().length === 0)"
-              title="Descargar imagen en formato PNG"
-            >
-              <span>📥 Descargar PNG</span>
-            </button>
-
-            <button
-              type="button"
-              class="btn-action btn-excel"
-              (click)="copyAsSpreadsheetTsv()"
-              [disabled]="viewMode() === 'multi_matrix' && activeColumns().length === 0"
-              title="Copiar celdas de texto para Excel o Google Sheets"
-            >
-              <span>📋 Copiar Datos (Excel)</span>
-            </button>
-          </div>
-        </div>
+        }
 
         <!-- Toast de confirmación -->
         @if (toastMessage()) {
@@ -273,9 +283,7 @@ export interface MediaRowReport {
                 <table class="matrix-report-table">
                   <thead>
                     <tr>
-                      <!-- Esquina superior izquierda -->
                       <th class="corner-cell">MEDIO</th>
-                      <!-- Cabeceras con Iniciales de Países -->
                       @for (col of activeColumns(); track col.country) {
                         <th class="country-header-cell" [class.header-market]="col.isMarket">
                           {{ getCountryCode(col.country) }}
@@ -284,7 +292,6 @@ export interface MediaRowReport {
                     </tr>
                   </thead>
                   <tbody>
-                    <!-- Filas de Plataformas con pauta -->
                     @for (platformName of activePlatforms(); track platformName) {
                       <tr>
                         <td class="platform-row-header">{{ platformName }}</td>
@@ -296,7 +303,6 @@ export interface MediaRowReport {
                       </tr>
                     }
 
-                    <!-- Fila: Volumen total -->
                     <tr class="summary-row-volume">
                       <td class="summary-label">Volumen total</td>
                       @for (col of activeColumns(); track col.country) {
@@ -306,7 +312,6 @@ export interface MediaRowReport {
                       }
                     </tr>
 
-                    <!-- Fila: Total % deduplicado -->
                     <tr class="summary-row-total">
                       <td class="summary-label">Total %</td>
                       @for (col of activeColumns(); track col.country) {
@@ -321,7 +326,7 @@ export interface MediaRowReport {
             }
 
             <!-- ========================================================
-                 VISTA 2: FICHA INDIVIDUAL (FORMATO DE LA REFERENCIA)
+                 VISTA 2: FICHA INDIVIDUAL (FORMATO EXACTO DE LA REFERENCIA)
                  ======================================================== -->
             @if (viewMode() === 'single_card') {
               @let target = selectedTarget();
@@ -358,44 +363,83 @@ export interface MediaRowReport {
             }
 
             <!-- ========================================================
-                 VISTA 3: VER TODAS (CUADRÍCULA ADAPTATIVA)
+                 VISTA 3: VER TODAS (CUADRÍCULA CON BOTONES INDIVIDUALES)
                  ======================================================== -->
             @if (viewMode() === 'all_grid') {
               <div class="all-grid-container">
                 @for (target of availableTargets(); track target.id) {
                   @let mediaRows = getActiveMediaRowsForTarget(target);
                   <div class="grid-card-item">
+                    <!-- Cabecera de Tarjeta con Botones de Acción Compactos -->
                     <div class="grid-card-header">
-                      <span class="grid-code-badge">{{ getCountryCode(target.country) }}</span>
-                      <span class="grid-country-name">{{ target.country }}</span>
-                      <span class="grid-universe">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
+                      <div class="grid-card-title-group">
+                        <span class="grid-code-badge" [class.badge-market]="target.isMarket">
+                          {{ getCountryCode(target.country) }}
+                        </span>
+                        <span class="grid-country-name">{{ target.country }}</span>
+                        <span class="grid-universe">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
+                      </div>
+
+                      <!-- Botones de Acción Individuales (Icon-only compactos con tooltip) -->
+                      <div class="grid-card-actions">
+                        <button
+                          type="button"
+                          class="btn-card-icon copy"
+                          (click)="copySingleCardImage(target, cardTable)"
+                          title="Copiar imagen de {{ target.country }}"
+                          aria-label="Copiar imagen de {{ target.country }}"
+                        >
+                          <hugeicons-icon [icon]="Camera01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-card-icon download"
+                          (click)="downloadSingleCardPng(target, cardTable)"
+                          title="Descargar PNG de {{ target.country }}"
+                          aria-label="Descargar PNG de {{ target.country }}"
+                        >
+                          <hugeicons-icon [icon]="Download01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-card-icon excel"
+                          (click)="copySingleCardExcel(target)"
+                          title="Copiar datos de {{ target.country }} para Excel"
+                          aria-label="Copiar datos de {{ target.country }} para Excel"
+                        >
+                          <hugeicons-icon [icon]="Copy01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                        </button>
+                      </div>
                     </div>
 
-                    <table class="executive-table">
-                      <thead>
-                        <tr>
-                          <th class="th-medio">MEDIO</th>
-                          <th class="th-reach">REACH</th>
-                          <th class="th-pct">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (row of mediaRows; track row.name) {
-                          <tr class="tr-data">
-                            <td class="td-medio">{{ row.name }}</td>
-                            <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
-                            <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
+                    <!-- Tabla de la Tarjeta -->
+                    <div class="card-table-render-box" #cardTable>
+                      <table class="executive-table">
+                        <thead>
+                          <tr>
+                            <th class="th-medio">MEDIO</th>
+                            <th class="th-reach">REACH</th>
+                            <th class="th-pct">%</th>
                           </tr>
-                        }
+                        </thead>
+                        <tbody>
+                          @for (row of mediaRows; track row.name) {
+                            <tr class="tr-data">
+                              <td class="td-medio">{{ row.name }}</td>
+                              <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
+                              <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
+                            </tr>
+                          }
 
-                        <!-- Fila TOTAL en Verde Salvia -->
-                        <tr class="tr-total">
-                          <td class="td-total-label">TOTAL</td>
-                          <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
-                          <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          <!-- Fila TOTAL en Verde Salvia -->
+                          <tr class="tr-total">
+                            <td class="td-total-label">TOTAL</td>
+                            <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
+                            <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 }
               </div>
@@ -434,7 +478,8 @@ export interface MediaRowReport {
       border-radius: 16px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
       width: 100%;
-      max-width: 960px;
+      max-width: 980px;
+      height: 90vh;
       max-height: 92vh;
       display: flex;
       flex-direction: column;
@@ -452,11 +497,12 @@ export interface MediaRowReport {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 20px;
+      padding: 12px 20px;
       border-bottom: 1px solid #e2e8f0;
       background: #f8fafc;
       gap: 12px;
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
     .header-left {
@@ -542,10 +588,18 @@ export interface MediaRowReport {
       gap: 2px;
     }
 
+    .control-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      padding: 0 3px;
+      letter-spacing: 0.3px;
+    }
+
     .seg-btn {
       background: transparent;
       border: none;
-      padding: 4px 6px;
+      padding: 4px 7px;
       font-size: 11px;
       font-weight: 600;
       color: #475569;
@@ -583,16 +637,17 @@ export interface MediaRowReport {
 
     /* Sub-bar: Selección de Columnas para Matriz */
     .column-selection-panel {
-      padding: 10px 20px;
+      padding: 8px 20px;
       background: #ffffff;
       border-bottom: 1px solid #e2e8f0;
+      flex-shrink: 0;
     }
 
     .selection-panel-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       gap: 12px;
       flex-wrap: wrap;
     }
@@ -749,6 +804,7 @@ export interface MediaRowReport {
       align-items: center;
       gap: 12px;
       overflow-x: auto;
+      flex-shrink: 0;
     }
 
     .initials-hint-label {
@@ -830,9 +886,10 @@ export interface MediaRowReport {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
     }
 
-    /* Toolbar de Exportación */
+    /* Toolbar de Exportación General */
     .export-toolbar {
       display: flex;
       align-items: center;
@@ -842,6 +899,7 @@ export interface MediaRowReport {
       border-bottom: 1px solid #e2e8f0;
       gap: 10px;
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
     .toolbar-hint {
@@ -919,31 +977,41 @@ export interface MediaRowReport {
       color: #065f46;
       font-size: 12px;
       font-weight: 600;
+      flex-shrink: 0;
     }
 
-    /* Contenedor del Lienzo */
+    /* ========================================================
+       CONTENEDOR DE SCROLL: ALINEACIÓN SUPERIOR (FLEX-START)
+       Previene el corte de la primera tabla
+       ======================================================== */
     .table-preview-scroll {
       flex: 1;
-      overflow: auto;
-      padding: 20px;
+      overflow-y: auto;
+      overflow-x: auto;
+      padding: 24px;
       background: #f1f5f9;
       display: flex;
-      align-items: center;
+      align-items: flex-start; /* CRÍTICO: align-items a flex-start evita el corte superior */
       justify-content: center;
-      min-height: 380px;
+      box-sizing: border-box;
+      width: 100%;
     }
 
     .screenshot-canvas-wrapper {
       background: #ffffff;
-      padding: 16px;
-      border-radius: 8px;
+      padding: 20px;
+      border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      display: inline-block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       max-width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
     }
 
     /* ========================================================
-       TABLA MATRIZ MULTI-PAÍS (FORMATO ORIGINAL SOLICITADO)
+       TABLA MATRIZ MULTI-PAÍS (FORMATO ORIGINAL CONSOLIDADO)
        ======================================================== */
     .matrix-report-table {
       border-collapse: collapse;
@@ -1031,13 +1099,14 @@ export interface MediaRowReport {
     .single-card-render {
       display: flex;
       justify-content: center;
+      width: 100%;
     }
 
     .executive-table {
       border-collapse: collapse;
       width: 100%;
-      min-width: 280px;
-      max-width: 380px;
+      min-width: 270px;
+      max-width: 360px;
       border: 2px solid #0f1f3d;
       background: #ffffff;
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -1122,26 +1191,48 @@ export interface MediaRowReport {
     }
 
     /* ========================================================
-       CUADRÍCULA ADAPTATIVA (VER TODAS)
+       CUADRÍCULA 'VER TODAS' CON BOTONES INDIVIDUALES
        ======================================================== */
     .all-grid-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 28px;
       align-items: start;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .grid-card-item {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+      }
     }
 
     .grid-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 4px;
+      padding: 2px 4px 6px 4px;
+      border-bottom: 1px dashed #e2e8f0;
+      gap: 8px;
+    }
+
+    .grid-card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .grid-code-badge {
@@ -1151,10 +1242,15 @@ export interface MediaRowReport {
       color: #ffffff;
       padding: 2px 6px;
       border-radius: 4px;
+      letter-spacing: 0.5px;
+
+      &.badge-market {
+        background: #ea580c;
+      }
     }
 
     .grid-country-name {
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 800;
       color: #0f172a;
     }
@@ -1163,6 +1259,70 @@ export interface MediaRowReport {
       font-size: 11px;
       color: #64748b;
       font-weight: 600;
+    }
+
+    /* Micro-botones individuales por tarjeta (26x26px con tooltip) */
+    .grid-card-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-card-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      padding: 0;
+
+      &.copy {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+
+        &:hover {
+          background: #dbeafe;
+          border-color: #93c5fd;
+          transform: translateY(-1px);
+        }
+      }
+
+      &.download {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #334155;
+
+        &:hover {
+          background: #e2e8f0;
+          border-color: #94a3b8;
+          transform: translateY(-1px);
+        }
+      }
+
+      &.excel {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #047857;
+
+        &:hover {
+          background: #d1fae5;
+          border-color: #6ee7b7;
+          transform: translateY(-1px);
+        }
+      }
+    }
+
+    .card-table-render-box {
+      display: flex;
+      justify-content: center;
+      background: #ffffff;
+      padding: 4px;
+      border-radius: 6px;
     }
 
     .empty-state-notice {
@@ -1188,6 +1348,7 @@ export interface MediaRowReport {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
 
     .footer-note {
@@ -1242,12 +1403,17 @@ export class ReportTableModalComponent {
 
   @ViewChild('tableCanvasContainer') tableContainer!: ElementRef<HTMLDivElement>;
 
+  // Iconos de Hugeicons
+  readonly Camera01Icon = Camera01Icon;
+  readonly Download01Icon = Download01Icon;
+  readonly Copy01Icon = Copy01Icon;
+
   // Tres Vistas Principales: 'multi_matrix' | 'single_card' | 'all_grid'
   viewMode = signal<'multi_matrix' | 'single_card' | 'all_grid'>('multi_matrix');
 
   // Opciones de formato
   thousandsSeparator = signal<'comma' | 'dot'>('comma');
-  totalDecimals = signal<0 | 2>(0);
+  percentDecimals = signal<0 | 2>(0); // 0 = enteros (37%), 2 = dos decimales (37.20%)
 
   // Estado para la Matriz Multi-País
   private initializedSelection = false;
@@ -1446,25 +1612,39 @@ export class ReportTableModalComponent {
     }
   }
 
+  /**
+   * Formatea el porcentaje aplicando la preferencia global de decimales (0 o 2)
+   */
   formatPercentage(val: number | null | undefined): string {
     if (val === null || val === undefined) return '0%';
-    return `${val.toFixed(2)}%`;
-  }
-
-  formatMatrixPercentage(val: number | null | undefined): string {
-    if (!val || val === 0) return '-';
-    return `${val.toFixed(2)}%`;
-  }
-
-  formatTotalPercentage(val: number | null | undefined): string {
-    if (val === null || val === undefined) return '0%';
-    const dec = this.totalDecimals();
+    const dec = this.percentDecimals();
     if (dec === 0) {
       return `${Math.round(val)}%`;
     }
     return `${val.toFixed(2)}%`;
   }
 
+  formatMatrixPercentage(val: number | null | undefined): string {
+    if (!val || val === 0) return '-';
+    const dec = this.percentDecimals();
+    if (dec === 0) {
+      return `${Math.round(val)}%`;
+    }
+    return `${val.toFixed(2)}%`;
+  }
+
+  formatTotalPercentage(val: number | null | undefined): string {
+    if (val === null || val === undefined) return '0%';
+    const dec = this.percentDecimals();
+    if (dec === 0) {
+      return `${Math.round(val)}%`;
+    }
+    return `${val.toFixed(2)}%`;
+  }
+
+  /* ========================================================
+     EXPORTADORES GENERALES (MATRIZ O FICHA INDIVIDUAL)
+     ======================================================== */
   async copyImageToClipboard(): Promise<void> {
     if (!this.tableContainer?.nativeElement) return;
     this.isExporting.set(true);
@@ -1486,7 +1666,7 @@ export class ReportTableModalComponent {
       ]);
 
       this.copyStatus.set('✓ ¡Copiada!');
-      this.showToast('¡Imagen copiada al portapapeles! Puedes pegarla con Ctrl+V en diapositivas.');
+      this.showToast('¡Imagen copiada al portapapeles! Puedes pegarla con Ctrl+V.');
       setTimeout(() => {
         this.copyStatus.set('📷 Copiar Imagen');
       }, 3000);
@@ -1590,6 +1770,66 @@ export class ReportTableModalComponent {
 
     navigator.clipboard.writeText(tsvContent).then(() => {
       this.showToast('¡Datos copiados! Pégalos directamente en Excel o Google Sheets.');
+    }).catch(err => {
+      console.error('Error al copiar TSV:', err);
+      this.showToast('Error al copiar datos en formato Excel.');
+    });
+  }
+
+  /* ========================================================
+     ACCIONES INDIVIDUALES POR TARJETA (EN 'VER TODAS')
+     ======================================================== */
+  async copySingleCardImage(target: CountryRow, element: HTMLElement): Promise<void> {
+    try {
+      this.showToast(`Generando imagen de ${target.country}...`);
+      const blob = await toBlob(element, {
+        pixelRatio: 2.5,
+        backgroundColor: '#ffffff'
+      });
+      if (!blob) throw new Error('Blob nulo');
+
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      this.showToast(`¡Ficha de ${target.country} copiada al portapapeles!`);
+    } catch (err) {
+      console.error('Error al copiar tarjeta individual:', err);
+      this.showToast(`No se pudo copiar automáticamente. Usa descargar.`);
+    }
+  }
+
+  async downloadSingleCardPng(target: CountryRow, element: HTMLElement): Promise<void> {
+    try {
+      this.showToast(`Descargando PNG de ${target.country}...`);
+      const dataUrl = await toPng(element, {
+        pixelRatio: 2.5,
+        backgroundColor: '#ffffff'
+      });
+      const code = this.getCountryCode(target.country);
+      const link = document.createElement('a');
+      link.download = `reporte_${code}_${new Date().toISOString().split('T')[0]}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      this.showToast(`¡Imagen de ${target.country} descargada!`);
+    } catch (err) {
+      console.error('Error al descargar tarjeta individual:', err);
+      this.showToast(`Error al descargar la imagen.`);
+    }
+  }
+
+  copySingleCardExcel(target: CountryRow): void {
+    const rows = this.getActiveMediaRowsForTarget(target);
+    const lines: string[] = ['MEDIO\tREACH\t%'];
+    rows.forEach(r => {
+      lines.push(`${r.name}\t${this.formatNumber(r.reach)}\t${this.formatPercentage(r.percentage)}`);
+    });
+    lines.push(`TOTAL\t${this.formatNumber(target.crossReach ?? 0)}\t${this.formatTotalPercentage(target.crossReachPercentage ?? 0)}`);
+    const tsvContent = lines.join('\n');
+
+    navigator.clipboard.writeText(tsvContent).then(() => {
+      this.showToast(`¡Datos de ${target.country} copiados para Excel!`);
     }).catch(err => {
       console.error('Error al copiar TSV:', err);
       this.showToast('Error al copiar datos en formato Excel.');
