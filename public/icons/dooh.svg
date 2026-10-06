@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect width="100" height="100" rx="20" fill="#042F2E"/>
+  <!-- Digital LED screen with glowing border -->
+  <rect x="14" y="20" width="72" height="42" rx="4" fill="#115E59" stroke="#2DD4BF" stroke-width="2"/>
+  <rect x="18" y="24" width="64" height="34" rx="2" fill="#134E4A"/>
+  <!-- DOOH lettering with digital glow -->
+  <text x="50" y="47" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#5EEAD4" text-anchor="middle" letter-spacing="1">DOOH</text>
+  <!-- Screen stand with LED pulse dot -->
+  <rect x="46" y="62" width="8" height="22" fill="#2DD4BF"/>
+  <rect x="32" y="84" width="36" height="4" rx="2" fill="#14B8A6"/>
+  <circle cx="76" cy="29" r="2.5" fill="#2DD4BF"/>
+</svg>

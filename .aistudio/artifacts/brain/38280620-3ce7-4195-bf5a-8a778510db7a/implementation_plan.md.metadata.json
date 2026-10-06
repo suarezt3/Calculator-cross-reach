@@ -1,6 +1,6 @@
 {
-  "summary":  "Plan para simplificar los botones de acción en la tabla con Hugeicons, resolver la persistencia de eliminación en la nube y reemplazar la marca Supabase por 'En la nube'.",
-  "updatedAt":  "2026-10-04T15:15:31.743106351Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "Plan de implementación para unificar las tres vistas del reporte descargable: Matriz Multi-País (columnas seleccionables), Ficha Individual (MEDIO | REACH | % con iniciales COL, CHL, PER, CRI, MX) y Ver Todas en cuadrícula con ajuste dinámico de medios activos por territorio.",
+  "updatedAt": "2026-10-06T19:51:53.377819536Z",
+  "requestFeedback": true,
+  "userFacing": true
 }

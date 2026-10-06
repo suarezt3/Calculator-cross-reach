@@ -67,8 +67,16 @@ export class PlatformIconComponent {
         return 'icons/Youtube.png';
       case 'tiktok':
         return 'icons/tiktok.png';
+      case 'netflix':
+        return 'icons/netflix.svg';
+      case 'disney':
+        return 'icons/disney.svg';
       case 'display':
         return 'icons/display.png';
+      case 'ooh':
+        return 'icons/ooh.svg';
+      case 'dooh':
+        return 'icons/dooh.svg';
       default:
         return 'icons/display.png';
     }
@@ -84,6 +92,14 @@ export class PlatformIconComponent {
         img.src = 'assets/icons/Youtube.png';
       } else if (norm === 'tiktok') {
         img.src = 'assets/icons/tiktok.png';
+      } else if (norm === 'netflix') {
+        img.src = 'assets/icons/netflix.svg';
+      } else if (norm === 'disney') {
+        img.src = 'assets/icons/disney.svg';
+      } else if (norm === 'ooh') {
+        img.src = 'assets/icons/ooh.svg';
+      } else if (norm === 'dooh') {
+        img.src = 'assets/icons/dooh.svg';
       } else {
         img.src = 'assets/icons/display.png';
       }

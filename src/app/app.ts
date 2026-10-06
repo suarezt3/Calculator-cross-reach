@@ -94,20 +94,28 @@ export class AppComponent {
         country: 'Mexico',
         universe: 53000000,
         platforms: [
-          { platformName: 'Meta', reach: 43000000 },
-          { platformName: 'YouTube', reach: 35000000 },
-          { platformName: 'TikTok', reach: 21000000 },
-          { platformName: 'Display', reach: 14000000 }
+          { platformName: 'Meta', reach: 19716710 },
+          { platformName: 'YouTube', reach: 15800616 },
+          { platformName: 'TikTok', reach: 9308655 },
+          { platformName: 'Netflix', reach: 1420927 },
+          { platformName: 'Disney', reach: null },
+          { platformName: 'Display', reach: 1229150 },
+          { platformName: 'OOH', reach: null },
+          { platformName: 'DOOH', reach: null }
         ]
       },
       {
         country: 'Colombia',
         universe: 27000000,
         platforms: [
-          { platformName: 'Meta', reach: 22000000 },
-          { platformName: 'YouTube', reach: 18000000 },
-          { platformName: 'TikTok', reach: 11500000 },
-          { platformName: 'Display', reach: 8500000 }
+          { platformName: 'Meta', reach: 18500000 },
+          { platformName: 'YouTube', reach: 14200000 },
+          { platformName: 'TikTok', reach: 8900000 },
+          { platformName: 'Netflix', reach: 1850000 },
+          { platformName: 'Disney', reach: 1100000 },
+          { platformName: 'Display', reach: 2400000 },
+          { platformName: 'OOH', reach: 950000 },
+          { platformName: 'DOOH', reach: 550000 }
         ]
       },
       {
@@ -116,7 +124,9 @@ export class AppComponent {
         platforms: [
           { platformName: 'Meta', reach: 15200000 },
           { platformName: 'YouTube', reach: 12800000 },
-          { platformName: 'TikTok', reach: 8800000 }
+          { platformName: 'TikTok', reach: 8800000 },
+          { platformName: 'Netflix', reach: 1200000 },
+          { platformName: 'Display', reach: 1500000 }
         ]
       },
       {
@@ -125,7 +135,9 @@ export class AppComponent {
         platforms: [
           { platformName: 'Meta', reach: 7800000 },
           { platformName: 'YouTube', reach: 7200000 },
-          { platformName: 'TikTok', reach: 4900000 }
+          { platformName: 'TikTok', reach: 4900000 },
+          { platformName: 'Netflix', reach: 850000 },
+          { platformName: 'Disney', reach: 620000 }
         ]
       },
       {

@@ -160,9 +160,9 @@ export class PlatformFormComponent {
     if (type === 'social') {
       presetPlatforms = ['Meta', 'TikTok'];
     } else if (type === 'video') {
-      presetPlatforms = ['Meta', 'YouTube', 'TikTok'];
+      presetPlatforms = ['Meta', 'YouTube', 'TikTok', 'Netflix', 'Disney'];
     } else if (type === 'all') {
-      presetPlatforms = ['Meta', 'YouTube', 'TikTok', 'Display'];
+      presetPlatforms = [...AVAILABLE_PLATFORMS];
     }
 
     const currentReaches = new Map<string, number | null>();

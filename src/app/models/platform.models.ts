@@ -29,7 +29,11 @@ export const AVAILABLE_PLATFORMS = [
   'Meta',
   'YouTube',
   'TikTok',
-  'Display'
+  'Netflix',
+  'Disney',
+  'Display',
+  'OOH',
+  'DOOH'
 ];
 
 // Universos oficiales confirmados para planificación de medios
@@ -46,7 +50,11 @@ export const PLATFORM_COLORS: Record<string, string> = {
   'Meta': '#0064E0',
   'YouTube': '#FF0000',
   'TikTok': '#0F172A',
-  'Display': '#0284C7'
+  'Netflix': '#E50914',
+  'Disney': '#0063E5',
+  'Display': '#0284C7',
+  'OOH': '#D97706',
+  'DOOH': '#0D9488'
 };
 
 // Badges y estilos de acento
@@ -54,5 +62,9 @@ export const PLATFORM_BG_TINTS: Record<string, string> = {
   'Meta': 'rgba(0, 100, 224, 0.08)',
   'YouTube': 'rgba(255, 0, 0, 0.08)',
   'TikTok': 'rgba(15, 23, 42, 0.08)',
-  'Display': 'rgba(2, 132, 199, 0.08)'
+  'Netflix': 'rgba(229, 9, 20, 0.08)',
+  'Disney': 'rgba(0, 99, 229, 0.08)',
+  'Display': 'rgba(2, 132, 199, 0.08)',
+  'OOH': 'rgba(217, 119, 6, 0.08)',
+  'DOOH': 'rgba(13, 148, 136, 0.08)'
 };

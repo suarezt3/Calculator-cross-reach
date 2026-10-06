@@ -104,7 +104,29 @@ export class CrossReachService {
         }
       });
     });
-    return Array.from(platforms).sort();
+
+    const canonicalOrder = [
+      'Meta',
+      'YouTube',
+      'TikTok',
+      'Netflix',
+      'Disney',
+      'Display',
+      'OOH',
+      'DOOH'
+    ];
+
+    const sorted: string[] = [];
+    canonicalOrder.forEach(name => {
+      const match = Array.from(platforms).find(p => p.toLowerCase() === name.toLowerCase());
+      if (match && !sorted.includes(match)) {
+        sorted.push(match);
+        platforms.delete(match);
+      }
+    });
+
+    Array.from(platforms).sort().forEach(p => sorted.push(p));
+    return sorted;
   }
 
   /**
