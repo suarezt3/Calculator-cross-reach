@@ -1,6 +1,6 @@
 {
-  "summary": "Plan para corregir la exportación de datos vacíos en Ficha Individual e incorporar cabeceras ejecutivas con bandera patria y nombre de país en las tablas descargadas.",
-  "updatedAt": "2026-10-06T20:38:00.246629871Z",
+  "summary": "Plan de implementación para corregir el recorte horizontal en la exportación de imágenes y unificar los botones de acción integrados directamente en la cabecera de cada tabla en las tres vistas.",
+  "updatedAt": "2026-10-06T21:04:28.985379287Z",
   "requestFeedback": true,
   "userFacing": true
 }

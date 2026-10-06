@@ -22,7 +22,7 @@ export interface MediaRowReport {
   template: `
     <div class="modal-backdrop" (click)="close.emit()">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
-        <!-- Header -->
+        <!-- Header Principal del Modal -->
         <div class="modal-header">
           <div class="header-left">
             <div class="header-icon">📸</div>
@@ -301,54 +301,8 @@ export interface MediaRowReport {
           <div class="grid-info-bar">
             <span>💡</span>
             <span>
-              Mostrando <strong>{{ availableTargets().length }} fichas ejecutivas</strong> adaptadas con bandera y encabezado patrio. Cada tarjeta tiene sus botones para copiar o descargar de forma independiente.
+              Mostrando <strong>{{ availableTargets().length }} fichas ejecutivas</strong> adaptadas a sus medios activos. Cada tarjeta contiene sus botones dedicados para copiar o descargar individualmente.
             </span>
-          </div>
-        }
-
-        <!-- Toolbar de exportación general (Activo para Matriz o Ficha Individual) -->
-        @if (viewMode() !== 'all_grid') {
-          <div class="export-toolbar">
-            <div class="toolbar-hint">
-              <span>💡</span>
-              @if (viewMode() === 'single_card') {
-                <span>Exporta la ficha ejecutiva de <strong>{{ selectedTarget()?.country }}</strong> con su bandera y formato oficial.</span>
-              } @else {
-                <span>Usa <strong>Copiar Imagen</strong> para pegar directamente (Ctrl+V) en PowerPoint, Google Slides o Slack.</span>
-              }
-            </div>
-
-            <div class="btn-group">
-              <button
-                type="button"
-                class="btn-action btn-copy"
-                (click)="copyImageToClipboard()"
-                [disabled]="isExporting() || (viewMode() === 'multi_matrix' && activeColumns().length === 0)"
-                title="Copiar imagen al portapapeles"
-              >
-                <span>{{ copyStatus() }}</span>
-              </button>
-
-              <button
-                type="button"
-                class="btn-action btn-download"
-                (click)="downloadAsPng()"
-                [disabled]="isExporting() || (viewMode() === 'multi_matrix' && activeColumns().length === 0)"
-                title="Descargar imagen en formato PNG"
-              >
-                <span>📥 Descargar PNG</span>
-              </button>
-
-              <button
-                type="button"
-                class="btn-action btn-excel"
-                (click)="copyAsSpreadsheetTsv()"
-                [disabled]="viewMode() === 'multi_matrix' && activeColumns().length === 0"
-                title="Copiar celdas de texto para Excel o Google Sheets"
-              >
-                <span>📋 Copiar Datos (Excel)</span>
-              </button>
-            </div>
           </div>
         }
 
@@ -360,240 +314,176 @@ export interface MediaRowReport {
           </div>
         }
 
-        <!-- Lienzo de la Tabla para Captura -->
+        <!-- ========================================================
+             LIENZO DE VISUALIZACIÓN Y SCROLL
+             (Centrado sin flex offset para evitar recorte en html-to-image)
+             ======================================================== -->
         <div class="table-preview-scroll">
+          <div class="canvas-centering-wrapper">
 
-          <!-- ========================================================
-               VISTA 1: MATRIZ MULTI-PAÍS (ORIGINAL CONSOLIDADA)
-               ======================================================== -->
-          @if (viewMode() === 'multi_matrix') {
-            @if (activeColumns().length === 0) {
-              <div class="empty-state-notice">
-                <span class="empty-icon">🗺️</span>
-                <p class="empty-text">Selecciona al menos un país arriba para generar la matriz comparativa.</p>
-              </div>
-            } @else {
-              <div class="screenshot-canvas-wrapper" #matrixCanvas>
-                <table class="matrix-report-table">
-                  <thead>
-                    <tr>
-                      <th class="corner-cell">MEDIO</th>
-                      @for (col of activeColumns(); track col.country) {
-                        <th class="country-header-cell" [class.header-market]="col.isMarket">
-                          <div class="header-flag-cell">
-                            <!-- Mini bandera en cabecera -->
-                            @switch (getCountryCode(col.country)) {
-                              @case ('COL') {
-                                <svg viewBox="0 0 24 16" width="16" height="11">
-                                  <rect width="24" height="8" fill="#FCD116"/>
-                                  <rect y="8" width="24" height="4" fill="#003893"/>
-                                  <rect y="12" width="24" height="4" fill="#CE1126"/>
-                                </svg>
-                              }
-                              @case ('MX') {
-                                <svg viewBox="0 0 24 16" width="16" height="11">
-                                  <rect width="8" height="16" fill="#006847"/>
-                                  <rect x="8" width="8" height="16" fill="#FFFFFF"/>
-                                  <rect x="16" width="8" height="16" fill="#CE1126"/>
-                                  <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
-                                </svg>
-                              }
-                              @case ('CHL') {
-                                <svg viewBox="0 0 24 16" width="16" height="11">
-                                  <rect width="24" height="8" fill="#FFFFFF"/>
-                                  <rect y="8" width="24" height="8" fill="#D52B1E"/>
-                                  <rect width="8" height="8" fill="#0039A6"/>
-                                  <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
-                                </svg>
-                              }
-                              @case ('PER') {
-                                <svg viewBox="0 0 24 16" width="16" height="11">
-                                  <rect width="8" height="16" fill="#D91023"/>
-                                  <rect x="8" width="8" height="16" fill="#FFFFFF"/>
-                                  <rect x="16" width="8" height="16" fill="#D91023"/>
-                                </svg>
-                              }
-                              @case ('CRI') {
-                                <svg viewBox="0 0 24 16" width="16" height="11">
-                                  <rect width="24" height="16" fill="#002B7F"/>
-                                  <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
-                                  <rect y="5" width="24" height="6" fill="#CE1126"/>
-                                </svg>
-                              }
-                            }
-                            <span>{{ getCountryCode(col.country) }}</span>
-                          </div>
-                        </th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (platformName of activePlatforms(); track platformName) {
+            <!-- ========================================================
+                 VISTA 1: MATRIZ MULTI-PAÍS CON BOTONES EN SU CABECERA
+                 ======================================================== -->
+            @if (viewMode() === 'multi_matrix') {
+              @if (activeColumns().length === 0) {
+                <div class="empty-state-notice">
+                  <span class="empty-icon">🗺️</span>
+                  <p class="empty-text">Selecciona al menos un país arriba para generar la matriz comparativa.</p>
+                </div>
+              } @else {
+                <div class="matrix-card-box" #matrixCardBox>
+                  <!-- Cabecera de la Matriz con Botones de Acción Integrados -->
+                  <div class="matrix-card-header">
+                    <div class="matrix-header-title-group">
+                      <span class="matrix-badge">📊 MATRIZ REGIONAL</span>
+                      <span class="matrix-count-note">
+                        {{ activeColumns().length }} países/mercados incluidos
+                      </span>
+                    </div>
+
+                    <!-- Botones de Acción en Cabecera (Icon-only compactos) -->
+                    <div class="card-action-buttons no-export">
+                      <button
+                        type="button"
+                        class="btn-card-icon copy"
+                        (click)="copyElementImage(matrixCardBox, 'Matriz Multi-País')"
+                        title="Copiar imagen de la matriz comparativa"
+                        aria-label="Copiar imagen de la matriz comparativa"
+                      >
+                        <hugeicons-icon [icon]="Camera01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-card-icon download"
+                        (click)="downloadElementPng(matrixCardBox, 'matriz_regional')"
+                        title="Descargar PNG de la matriz comparativa"
+                        aria-label="Descargar PNG de la matriz comparativa"
+                      >
+                        <hugeicons-icon [icon]="Download01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-card-icon excel"
+                        (click)="copyMatrixExcel()"
+                        title="Copiar datos de la matriz para Excel"
+                        aria-label="Copiar datos de la matriz para Excel"
+                      >
+                        <hugeicons-icon [icon]="Copy01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tabla de la Matriz -->
+                  <table class="matrix-report-table">
+                    <thead>
                       <tr>
-                        <td class="platform-row-header">{{ platformName }}</td>
+                        <th class="corner-cell">MEDIO</th>
                         @for (col of activeColumns(); track col.country) {
-                          <td class="data-cell">
-                            {{ formatMatrixPercentage(getPlatformReachPercent(col, platformName)) }}
+                          <th class="country-header-cell" [class.header-market]="col.isMarket">
+                            <div class="header-flag-cell">
+                              @switch (getCountryCode(col.country)) {
+                                @case ('COL') {
+                                  <svg viewBox="0 0 24 16" width="16" height="11">
+                                    <rect width="24" height="8" fill="#FCD116"/>
+                                    <rect y="8" width="24" height="4" fill="#003893"/>
+                                    <rect y="12" width="24" height="4" fill="#CE1126"/>
+                                  </svg>
+                                }
+                                @case ('MX') {
+                                  <svg viewBox="0 0 24 16" width="16" height="11">
+                                    <rect width="8" height="16" fill="#006847"/>
+                                    <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                                    <rect x="16" width="8" height="16" fill="#CE1126"/>
+                                    <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                                  </svg>
+                                }
+                                @case ('CHL') {
+                                  <svg viewBox="0 0 24 16" width="16" height="11">
+                                    <rect width="24" height="8" fill="#FFFFFF"/>
+                                    <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                                    <rect width="8" height="8" fill="#0039A6"/>
+                                    <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                                  </svg>
+                                }
+                                @case ('PER') {
+                                  <svg viewBox="0 0 24 16" width="16" height="11">
+                                    <rect width="8" height="16" fill="#D91023"/>
+                                    <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                                    <rect x="16" width="8" height="16" fill="#D91023"/>
+                                  </svg>
+                                }
+                                @case ('CRI') {
+                                  <svg viewBox="0 0 24 16" width="16" height="11">
+                                    <rect width="24" height="16" fill="#002B7F"/>
+                                    <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                                    <rect y="5" width="24" height="6" fill="#CE1126"/>
+                                  </svg>
+                                }
+                              }
+                              <span>{{ getCountryCode(col.country) }}</span>
+                            </div>
+                          </th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (platformName of activePlatforms(); track platformName) {
+                        <tr>
+                          <td class="platform-row-header">{{ platformName }}</td>
+                          @for (col of activeColumns(); track col.country) {
+                            <td class="data-cell">
+                              {{ formatMatrixPercentage(getPlatformReachPercent(col, platformName)) }}
+                            </td>
+                          }
+                        </tr>
+                      }
+
+                      <tr class="summary-row-volume">
+                        <td class="summary-label">Volumen total</td>
+                        @for (col of activeColumns(); track col.country) {
+                          <td class="data-cell-volume tabular">
+                            {{ formatNumber(col.crossReach ?? 0) }}
                           </td>
                         }
                       </tr>
-                    }
 
-                    <tr class="summary-row-volume">
-                      <td class="summary-label">Volumen total</td>
-                      @for (col of activeColumns(); track col.country) {
-                        <td class="data-cell-volume tabular">
-                          {{ formatNumber(col.crossReach ?? 0) }}
-                        </td>
-                      }
-                    </tr>
-
-                    <tr class="summary-row-total">
-                      <td class="summary-label">Total %</td>
-                      @for (col of activeColumns(); track col.country) {
-                        <td class="data-cell-total tabular">
-                          {{ formatTotalPercentage(col.crossReachPercentage ?? 0) }}
-                        </td>
-                      }
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            }
-          }
-
-          <!-- ========================================================
-               VISTA 2: FICHA INDIVIDUAL CON CABECERA PATRIA Y BANDERA
-               ======================================================== -->
-          @if (viewMode() === 'single_card') {
-            @let target = selectedTarget();
-            @if (target) {
-              @let mediaRows = getActiveMediaRowsForTarget(target);
-              <!-- Contenedor único para la captura de Ficha Individual -->
-              <div class="single-card-render-wrapper" #singleCardCanvas>
-                <!-- Cabecera Ejecutiva con Bandera Nacional y País -->
-                <div class="executive-country-card-header">
-                  <div class="header-flag-title-group">
-                    <div class="flag-icon-container">
-                      @switch (getCountryCode(target.country)) {
-                        @case ('COL') {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="24" height="8" fill="#FCD116"/>
-                            <rect y="8" width="24" height="4" fill="#003893"/>
-                            <rect y="12" width="24" height="4" fill="#CE1126"/>
-                          </svg>
+                      <tr class="summary-row-total">
+                        <td class="summary-label">Total %</td>
+                        @for (col of activeColumns(); track col.country) {
+                          <td class="data-cell-total tabular">
+                            {{ formatTotalPercentage(col.crossReachPercentage ?? 0) }}
+                          </td>
                         }
-                        @case ('MX') {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="8" height="16" fill="#006847"/>
-                            <rect x="8" width="8" height="16" fill="#FFFFFF"/>
-                            <rect x="16" width="8" height="16" fill="#CE1126"/>
-                            <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
-                          </svg>
-                        }
-                        @case ('CHL') {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="24" height="8" fill="#FFFFFF"/>
-                            <rect y="8" width="24" height="8" fill="#D52B1E"/>
-                            <rect width="8" height="8" fill="#0039A6"/>
-                            <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
-                          </svg>
-                        }
-                        @case ('PER') {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="8" height="16" fill="#D91023"/>
-                            <rect x="8" width="8" height="16" fill="#FFFFFF"/>
-                            <rect x="16" width="8" height="16" fill="#D91023"/>
-                          </svg>
-                        }
-                        @case ('CRI') {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="24" height="16" fill="#002B7F"/>
-                            <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
-                            <rect y="5" width="24" height="6" fill="#CE1126"/>
-                          </svg>
-                        }
-                        @case ('CASACA') {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="24" height="16" rx="2" fill="#EA580C"/>
-                            <text x="12" y="11.5" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">CAS</text>
-                          </svg>
-                        }
-                        @default {
-                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
-                            <rect width="24" height="16" rx="2" fill="#0D9488"/>
-                            <text x="12" y="11.5" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">LAT</text>
-                          </svg>
-                        }
-                      }
-                    </div>
-
-                    <div class="country-titles">
-                      <span class="country-main-name">
-                        {{ getCountryCode(target.country) }} · {{ target.country.toUpperCase() }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="universe-badge-wrap">
-                    <span class="universe-badge-text">
-                      Universo: <strong>{{ formatNumber(target.universe ?? 0) }}</strong>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Tabla de Medios Fiel a la Referencia -->
-                <table class="executive-table">
-                  <thead>
-                    <tr>
-                      <th class="th-medio">MEDIO</th>
-                      <th class="th-reach">REACH</th>
-                      <th class="th-pct">%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of mediaRows; track row.name) {
-                      <tr class="tr-data">
-                        <td class="td-medio">{{ row.name }}</td>
-                        <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
-                        <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
                       </tr>
-                    }
-
-                    <!-- Fila TOTAL en Verde Salvia -->
-                    <tr class="tr-total">
-                      <td class="td-total-label">TOTAL</td>
-                      <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
-                      <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+              }
             }
-          }
 
-          <!-- ========================================================
-               VISTA 3: VER TODAS (CUADRÍCULA CON CABECERA Y BOTONES)
-               ======================================================== -->
-          @if (viewMode() === 'all_grid') {
-            <div class="all-grid-container" #allGridCanvas>
-              @for (target of availableTargets(); track getTargetKey(target)) {
+            <!-- ========================================================
+                 VISTA 2: FICHA INDIVIDUAL CON BOTONES EN SU CABECERA
+                 ======================================================== -->
+            @if (viewMode() === 'single_card') {
+              @let target = selectedTarget();
+              @if (target) {
                 @let mediaRows = getActiveMediaRowsForTarget(target);
-                <div class="grid-card-item">
-                  <!-- Cabecera de Tarjeta con Bandera y Botones de Acción -->
-                  <div class="grid-card-header">
-                    <div class="grid-card-title-group">
+                <!-- Tarjeta Autónoma con Botones en Cabecera -->
+                <div class="single-card-box" #singleCardBox>
+                  <!-- Cabecera Ejecutiva con Bandera, País y Botones de Acción -->
+                  <div class="single-card-header">
+                    <div class="header-flag-title-group">
                       <div class="flag-icon-container">
                         @switch (getCountryCode(target.country)) {
                           @case ('COL') {
-                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
                               <rect width="24" height="8" fill="#FCD116"/>
                               <rect y="8" width="24" height="4" fill="#003893"/>
                               <rect y="12" width="24" height="4" fill="#CE1126"/>
                             </svg>
                           }
                           @case ('MX') {
-                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
                               <rect width="8" height="16" fill="#006847"/>
                               <rect x="8" width="8" height="16" fill="#FFFFFF"/>
                               <rect x="16" width="8" height="16" fill="#CE1126"/>
@@ -601,7 +491,7 @@ export interface MediaRowReport {
                             </svg>
                           }
                           @case ('CHL') {
-                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
                               <rect width="24" height="8" fill="#FFFFFF"/>
                               <rect y="8" width="24" height="8" fill="#D52B1E"/>
                               <rect width="8" height="8" fill="#0039A6"/>
@@ -609,38 +499,50 @@ export interface MediaRowReport {
                             </svg>
                           }
                           @case ('PER') {
-                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
                               <rect width="8" height="16" fill="#D91023"/>
                               <rect x="8" width="8" height="16" fill="#FFFFFF"/>
                               <rect x="16" width="8" height="16" fill="#D91023"/>
                             </svg>
                           }
                           @case ('CRI') {
-                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
                               <rect width="24" height="16" fill="#002B7F"/>
                               <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
                               <rect y="5" width="24" height="6" fill="#CE1126"/>
                             </svg>
                           }
+                          @case ('CASACA') {
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                              <rect width="24" height="16" rx="2" fill="#EA580C"/>
+                              <text x="12" y="11.5" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">CAS</text>
+                            </svg>
+                          }
                           @default {
-                            <span class="flag-placeholder">🌐</span>
+                            <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                              <rect width="24" height="16" rx="2" fill="#0D9488"/>
+                              <text x="12" y="11.5" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">LAT</text>
+                            </svg>
                           }
                         }
                       </div>
 
-                      <span class="grid-code-badge" [class.badge-market]="target.isMarket">
-                        {{ getCountryCode(target.country) }}
-                      </span>
-                      <span class="grid-country-name">{{ target.country }}</span>
-                      <span class="grid-universe">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
+                      <div class="country-titles">
+                        <span class="country-main-name">
+                          {{ getCountryCode(target.country) }} · {{ target.country.toUpperCase() }}
+                        </span>
+                        <span class="country-univ-sub">
+                          Univ: <strong>{{ formatNumber(target.universe ?? 0) }}</strong>
+                        </span>
+                      </div>
                     </div>
 
-                    <!-- Botones de Acción Individuales (Icon-only compactos con tooltip) -->
-                    <div class="grid-card-actions">
+                    <!-- Botones de Acción en Cabecera (Icon-only compactos) -->
+                    <div class="card-action-buttons no-export">
                       <button
                         type="button"
                         class="btn-card-icon copy"
-                        (click)="copySingleCardImage(target, cardTableWrapper)"
+                        (click)="copyElementImage(singleCardBox, target.country)"
                         title="Copiar imagen de {{ target.country }}"
                         aria-label="Copiar imagen de {{ target.country }}"
                       >
@@ -649,7 +551,7 @@ export interface MediaRowReport {
                       <button
                         type="button"
                         class="btn-card-icon download"
-                        (click)="downloadSingleCardPng(target, cardTableWrapper)"
+                        (click)="downloadElementPng(singleCardBox, getCountryCode(target.country))"
                         title="Descargar PNG de {{ target.country }}"
                         aria-label="Descargar PNG de {{ target.country }}"
                       >
@@ -667,22 +569,58 @@ export interface MediaRowReport {
                     </div>
                   </div>
 
-                  <!-- Bloque de la Ficha a Capturar individualmente -->
-                  <div class="card-table-render-box" #cardTableWrapper>
-                    <!-- Cabecera de captura integrada -->
-                    <div class="card-capture-banner">
-                      <div class="capture-banner-left">
+                  <!-- Tabla de Medios Fiel a la Referencia -->
+                  <table class="executive-table">
+                    <thead>
+                      <tr>
+                        <th class="th-medio">MEDIO</th>
+                        <th class="th-reach">REACH</th>
+                        <th class="th-pct">%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of mediaRows; track row.name) {
+                        <tr class="tr-data">
+                          <td class="td-medio">{{ row.name }}</td>
+                          <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
+                          <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
+                        </tr>
+                      }
+
+                      <!-- Fila TOTAL en Verde Salvia -->
+                      <tr class="tr-total">
+                        <td class="td-total-label">TOTAL</td>
+                        <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
+                        <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              }
+            }
+
+            <!-- ========================================================
+                 VISTA 3: VER TODAS (CUADRÍCULA CON BOTONES EN CADA TARJETA)
+                 ======================================================== -->
+            @if (viewMode() === 'all_grid') {
+              <div class="all-grid-container">
+                @for (target of availableTargets(); track getTargetKey(target)) {
+                  @let mediaRows = getActiveMediaRowsForTarget(target);
+                  <div class="grid-card-box" #gridCardBox>
+                    <!-- Cabecera de Tarjeta con Bandera, País y Botones -->
+                    <div class="grid-card-header">
+                      <div class="grid-card-title-group">
                         <div class="flag-icon-container">
                           @switch (getCountryCode(target.country)) {
                             @case ('COL') {
-                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                              <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
                                 <rect width="24" height="8" fill="#FCD116"/>
                                 <rect y="8" width="24" height="4" fill="#003893"/>
                                 <rect y="12" width="24" height="4" fill="#CE1126"/>
                               </svg>
                             }
                             @case ('MX') {
-                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                              <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
                                 <rect width="8" height="16" fill="#006847"/>
                                 <rect x="8" width="8" height="16" fill="#FFFFFF"/>
                                 <rect x="16" width="8" height="16" fill="#CE1126"/>
@@ -690,7 +628,7 @@ export interface MediaRowReport {
                               </svg>
                             }
                             @case ('CHL') {
-                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                              <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
                                 <rect width="24" height="8" fill="#FFFFFF"/>
                                 <rect y="8" width="24" height="8" fill="#D52B1E"/>
                                 <rect width="8" height="8" fill="#0039A6"/>
@@ -698,14 +636,14 @@ export interface MediaRowReport {
                               </svg>
                             }
                             @case ('PER') {
-                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                              <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
                                 <rect width="8" height="16" fill="#D91023"/>
                                 <rect x="8" width="8" height="16" fill="#FFFFFF"/>
                                 <rect x="16" width="8" height="16" fill="#D91023"/>
                               </svg>
                             }
                             @case ('CRI') {
-                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                              <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
                                 <rect width="24" height="16" fill="#002B7F"/>
                                 <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
                                 <rect y="5" width="24" height="6" fill="#CE1126"/>
@@ -716,14 +654,47 @@ export interface MediaRowReport {
                             }
                           }
                         </div>
-                        <span class="capture-country-name">
-                          {{ getCountryCode(target.country) }} · {{ target.country.toUpperCase() }}
+
+                        <span class="grid-code-badge" [class.badge-market]="target.isMarket">
+                          {{ getCountryCode(target.country) }}
                         </span>
+                        <span class="grid-country-name">{{ target.country }}</span>
+                        <span class="grid-universe">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
                       </div>
-                      <span class="capture-univ-tag">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
+
+                      <!-- Botones de Acción en Tarjeta (Icon-only compactos) -->
+                      <div class="card-action-buttons no-export">
+                        <button
+                          type="button"
+                          class="btn-card-icon copy"
+                          (click)="copyElementImage(gridCardBox, target.country)"
+                          title="Copiar imagen de {{ target.country }}"
+                          aria-label="Copiar imagen de {{ target.country }}"
+                        >
+                          <hugeicons-icon [icon]="Camera01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-card-icon download"
+                          (click)="downloadElementPng(gridCardBox, getCountryCode(target.country))"
+                          title="Descargar PNG de {{ target.country }}"
+                          aria-label="Descargar PNG de {{ target.country }}"
+                        >
+                          <hugeicons-icon [icon]="Download01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-card-icon excel"
+                          (click)="copySingleCardExcel(target)"
+                          title="Copiar datos de {{ target.country }} para Excel"
+                          aria-label="Copiar datos de {{ target.country }} para Excel"
+                        >
+                          <hugeicons-icon [icon]="Copy01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                        </button>
+                      </div>
                     </div>
 
-                    <!-- Tabla del País -->
+                    <!-- Tabla de la Tarjeta -->
                     <table class="executive-table">
                       <thead>
                         <tr>
@@ -750,17 +721,17 @@ export interface MediaRowReport {
                       </tbody>
                     </table>
                   </div>
-                </div>
-              }
-            </div>
-          }
+                }
+              </div>
+            }
 
+          </div>
         </div>
 
         <!-- Footer -->
         <div class="modal-footer">
           <span class="footer-note">
-            Tipografía Plus Jakarta Sans de alta fidelidad. Capturas retina 2.5x con bandera patria integrada para máxima nitidez en presentaciones.
+            Tipografía Plus Jakarta Sans de alta fidelidad. Capturas retina 2.5x con bandera patria integrada y exportación directa desde cada tabla.
           </span>
           <button type="button" class="btn-done" (click)="close.emit()">
             Listo
@@ -1210,84 +1181,6 @@ export interface MediaRowReport {
       flex-shrink: 0;
     }
 
-    /* Toolbar de Exportación General */
-    .export-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 20px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-      gap: 10px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .toolbar-hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11.5px;
-      color: #64748b;
-    }
-
-    .btn-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      font-size: 11.5px;
-      font-weight: 700;
-      border-radius: 6px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.15s ease;
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
-
-    .btn-copy {
-      background: #4f46e5;
-      color: #ffffff;
-      border-color: #4338ca;
-
-      &:hover:not(:disabled) {
-        background: #4338ca;
-        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
-      }
-    }
-
-    .btn-download {
-      background: #ffffff;
-      color: #1e293b;
-      border-color: #cbd5e1;
-
-      &:hover:not(:disabled) {
-        background: #f1f5f9;
-        border-color: #94a3b8;
-      }
-    }
-
-    .btn-excel {
-      background: #ffffff;
-      color: #059669;
-      border-color: #a7f3d0;
-
-      &:hover:not(:disabled) {
-        background: #ecfdf5;
-        border-color: #6ee7b7;
-      }
-    }
-
     .toast-banner {
       display: flex;
       align-items: center;
@@ -1302,60 +1195,96 @@ export interface MediaRowReport {
     }
 
     /* ========================================================
-       CONTENEDOR DE SCROLL: ALINEACIÓN SUPERIOR (FLEX-START)
-       Previene el corte de la primera tabla
+       CONTENEDOR DE SCROLL: CENTRADO INLINE SIN DESFASE FLEX
+       (Solución definitiva al recorte lateral de html-to-image)
        ======================================================== */
     .table-preview-scroll {
       flex: 1;
-      overflow-y: auto;
-      overflow-x: auto;
+      overflow: auto;
       padding: 24px;
       background: #f1f5f9;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      display: block; /* Bloque simple en lugar de flexbox centering */
+      text-align: center; /* Centra el contenido inline sin introducir coordenadas relativas x */
       box-sizing: border-box;
       width: 100%;
     }
 
-    .screenshot-canvas-wrapper {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    .canvas-centering-wrapper {
+      display: inline-block;
+      text-align: left;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* ========================================================
+       CAJAS AUTÓNOMAS DE EXPORTACIÓN (FIT-CONTENT)
+       ======================================================== */
+    .matrix-card-box {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      border: 1px solid #cbd5e1;
+      width: fit-content;
       max-width: 100%;
       margin: 0 auto;
       box-sizing: border-box;
     }
 
-    /* ========================================================
-       CABECERA EJECUTIVA DE PAÍS CON BANDERA PARA CAPTURA
-       ======================================================== */
-    .single-card-render-wrapper {
-      display: flex;
-      flex-direction: column;
-      background: #ffffff;
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
-      max-width: 400px;
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid #e2e8f0;
-      margin: 0 auto;
-    }
-
-    .executive-country-card-header {
+    .matrix-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 2px 10px 2px;
-      border-bottom: 2px solid #0f1f3d;
+      padding-bottom: 10px;
       margin-bottom: 12px;
+      border-bottom: 2px solid #0f1f3d;
+      gap: 16px;
+    }
+
+    .matrix-header-title-group {
+      display: flex;
+      align-items: center;
       gap: 8px;
+    }
+
+    .matrix-badge {
+      font-size: 13px;
+      font-weight: 900;
+      color: #0f1f3d;
+      letter-spacing: 0.5px;
+    }
+
+    .matrix-count-note {
+      font-size: 11.5px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    /* Ficha Individual */
+    .single-card-box {
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      border: 1px solid #cbd5e1;
+      width: 360px;
+      max-width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    .single-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #0f1f3d;
+      gap: 10px;
     }
 
     .header-flag-title-group {
@@ -1372,14 +1301,10 @@ export interface MediaRowReport {
       border-radius: 2px;
       overflow: hidden;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
     }
 
-    .flag-render {
-      display: block;
-      border-radius: 2px;
-    }
-
-    .flag-inline {
+    .flag-render, .flag-inline {
       display: block;
       border-radius: 2px;
     }
@@ -1391,39 +1316,81 @@ export interface MediaRowReport {
     .country-titles {
       display: flex;
       flex-direction: column;
+      line-height: 1.2;
     }
 
     .country-main-name {
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 900;
       color: #0f1f3d;
       letter-spacing: 0.5px;
     }
 
-    .universe-badge-wrap {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      padding: 3px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
-    }
-
-    .universe-badge-text {
-      font-size: 11px;
-      color: #475569;
+    .country-univ-sub {
+      font-size: 10.5px;
+      color: #64748b;
+      font-weight: 600;
 
       strong {
-        color: #0f172a;
-        font-weight: 800;
+        color: #1e293b;
       }
     }
 
-    /* Header de celda en matriz con bandera */
-    .header-flag-cell {
-      display: flex;
-      flex-direction: column;
+    /* Micro-botones en cabecera de tarjeta (26x26px) */
+    .card-action-buttons {
+      display: inline-flex;
       align-items: center;
       gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-card-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      padding: 0;
+
+      &.copy {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+
+        &:hover {
+          background: #dbeafe;
+          border-color: #93c5fd;
+          transform: translateY(-1px);
+        }
+      }
+
+      &.download {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #334155;
+
+        &:hover {
+          background: #e2e8f0;
+          border-color: #94a3b8;
+          transform: translateY(-1px);
+        }
+      }
+
+      &.excel {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #047857;
+
+        &:hover {
+          background: #d1fae5;
+          border-color: #6ee7b7;
+          transform: translateY(-1px);
+        }
+      }
     }
 
     /* ========================================================
@@ -1434,6 +1401,7 @@ export interface MediaRowReport {
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       font-size: 13px;
       background: #ffffff;
+      width: 100%;
 
       th, td {
         border: 1px solid #cbd5e1;
@@ -1462,6 +1430,13 @@ export interface MediaRowReport {
         &.header-market {
           background: #c2410c;
         }
+      }
+
+      .header-flag-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
       }
 
       .platform-row-header {
@@ -1524,7 +1499,6 @@ export interface MediaRowReport {
         border: 1.5px solid #0f1f3d;
       }
 
-      /* Cabecera Azul Marino (#0f1f3d) */
       thead th {
         background: #0f1f3d;
         color: #ffffff;
@@ -1548,7 +1522,6 @@ export interface MediaRowReport {
         width: 24%;
       }
 
-      /* Filas de datos */
       .tr-data td {
         background: #ffffff;
         padding: 7px 12px;
@@ -1574,7 +1547,6 @@ export interface MediaRowReport {
         color: #000000;
       }
 
-      /* Fila de TOTAL en Verde Salvia (#c8dfc4) */
       .tr-total td {
         background: #c8dfc4;
         padding: 8px 12px;
@@ -1604,27 +1576,27 @@ export interface MediaRowReport {
        ======================================================== */
     .all-grid-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-      gap: 28px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
       align-items: start;
       width: 100%;
       box-sizing: border-box;
     }
 
-    .grid-card-item {
+    .grid-card-box {
       display: flex;
       flex-direction: column;
-      gap: 8px;
       background: #ffffff;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-sizing: border-box;
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
       }
     }
 
@@ -1632,8 +1604,9 @@ export interface MediaRowReport {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 2px 4px 6px 4px;
-      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1.5px solid #0f1f3d;
       gap: 8px;
     }
 
@@ -1668,103 +1641,6 @@ export interface MediaRowReport {
       font-size: 11px;
       color: #64748b;
       font-weight: 600;
-    }
-
-    /* Micro-botones individuales por tarjeta (26x26px con tooltip) */
-    .grid-card-actions {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .btn-card-icon {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      padding: 0;
-
-      &.copy {
-        background: #eff6ff;
-        border-color: #bfdbfe;
-        color: #1d4ed8;
-
-        &:hover {
-          background: #dbeafe;
-          border-color: #93c5fd;
-          transform: translateY(-1px);
-        }
-      }
-
-      &.download {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
-        color: #334155;
-
-        &:hover {
-          background: #e2e8f0;
-          border-color: #94a3b8;
-          transform: translateY(-1px);
-        }
-      }
-
-      &.excel {
-        background: #ecfdf5;
-        border-color: #a7f3d0;
-        color: #047857;
-
-        &:hover {
-          background: #d1fae5;
-          border-color: #6ee7b7;
-          transform: translateY(-1px);
-        }
-      }
-    }
-
-    .card-table-render-box {
-      display: flex;
-      flex-direction: column;
-      background: #ffffff;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #f1f5f9;
-    }
-
-    .card-capture-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 8px;
-      margin-bottom: 8px;
-      border-bottom: 1.5px solid #0f1f3d;
-      gap: 6px;
-    }
-
-    .capture-banner-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .capture-country-name {
-      font-size: 12px;
-      font-weight: 900;
-      color: #0f1f3d;
-      letter-spacing: 0.4px;
-    }
-
-    .capture-univ-tag {
-      font-size: 10px;
-      font-weight: 700;
-      color: #475569;
-      background: #f1f5f9;
-      padding: 2px 6px;
-      border-radius: 4px;
     }
 
     .empty-state-notice {
@@ -1847,11 +1723,6 @@ export class ReportTableModalComponent {
 
   @Output() close = new EventEmitter<void>();
 
-  // Referencias a los contenedores específicos de captura según la vista
-  @ViewChild('matrixCanvas') matrixCanvasRef?: ElementRef<HTMLDivElement>;
-  @ViewChild('singleCardCanvas') singleCardCanvasRef?: ElementRef<HTMLDivElement>;
-  @ViewChild('allGridCanvas') allGridCanvasRef?: ElementRef<HTMLDivElement>;
-
   // Iconos de Hugeicons
   readonly Camera01Icon = Camera01Icon;
   readonly Download01Icon = Download01Icon;
@@ -1872,7 +1743,6 @@ export class ReportTableModalComponent {
   selectedTargetKey = signal<string>('');
 
   isExporting = signal<boolean>(false);
-  copyStatus = signal<string>('📷 Copiar Imagen');
   toastMessage = signal<string | null>(null);
 
   // Mapeo oficial de códigos de 3 letras / iniciales amigables solicitadas (COL, CHL, PER, CRI, MX)
@@ -2016,16 +1886,13 @@ export class ReportTableModalComponent {
 
   /**
    * Obtiene ÚNICAMENTE los medios que tuvieron inversión activa (> 0) en este país o mercado
-   * Ejemplo: Si en Costa Rica no hubo Disney o Display, no los incluye en la tabla.
    */
   getActiveMediaRowsForTarget(target: CountryRow): MediaRowReport[] {
     const universe = target.universe || 0;
     const mediaRows: MediaRowReport[] = [];
 
-    // Filtrar plataformas con alcance estrictamente mayor a 0
     const activePlatforms = target.platforms.filter(p => (p.reach ?? 0) > 0);
 
-    // Ordenar según el orden canónico
     this.canonicalPlatformsOrder.forEach(canonicalName => {
       const match = activePlatforms.find(
         p => p.platformName.toLowerCase().trim() === canonicalName.toLowerCase().trim()
@@ -2040,7 +1907,6 @@ export class ReportTableModalComponent {
       }
     });
 
-    // Agregar cualquier otra plataforma no canónica que esté activa
     activePlatforms.forEach(p => {
       const isAlreadyAdded = mediaRows.some(
         m => m.name.toLowerCase() === p.platformName.toLowerCase()
@@ -2069,9 +1935,6 @@ export class ReportTableModalComponent {
     }
   }
 
-  /**
-   * Formatea el porcentaje aplicando la preferencia global de decimales (0 o 2)
-   */
   formatPercentage(val: number | null | undefined): string {
     if (val === null || val === undefined) return '0%';
     const dec = this.percentDecimals();
@@ -2100,90 +1963,92 @@ export class ReportTableModalComponent {
   }
 
   /* ========================================================
-     OBTENCIÓN DEL NODO ACTIVO PARA CAPTURA
+     CAPTURADORES DE ALTA PRECISIÓN (SIN DESFASE HORIZONTAL)
      ======================================================== */
-  private getActiveCanvasNode(): HTMLElement | null {
-    const mode = this.viewMode();
-    if (mode === 'single_card') {
-      return this.singleCardCanvasRef?.nativeElement || null;
-    }
-    if (mode === 'multi_matrix') {
-      return this.matrixCanvasRef?.nativeElement || null;
-    }
-    return this.allGridCanvasRef?.nativeElement || null;
-  }
 
-  /* ========================================================
-     EXPORTADORES GENERALES (MATRIZ O FICHA INDIVIDUAL)
-     ======================================================== */
-  async copyImageToClipboard(): Promise<void> {
-    const node = this.getActiveCanvasNode();
-    if (!node) {
-      this.showToast('No se encontró el elemento para copiar.');
-      return;
-    }
-
+  /**
+   * Copia la imagen de cualquier caja de tabla directamente al portapapeles
+   * Excluye los botones con clase 'no-export' y normaliza el posicionamiento a (0,0)
+   */
+  async copyElementImage(element: HTMLElement, titleLabel: string): Promise<void> {
     this.isExporting.set(true);
-    this.copyStatus.set('Generando imagen...');
+    this.showToast(`Generando imagen de ${titleLabel}...`);
 
     try {
-      const blob = await toBlob(node, {
+      const width = element.scrollWidth;
+      const height = element.scrollHeight;
+
+      const blob = await toBlob(element, {
         pixelRatio: 2.5,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: width,
+        height: height,
+        filter: (node: Node) => {
+          if (node instanceof HTMLElement && node.classList.contains('no-export')) {
+            return false;
+          }
+          return true;
+        },
+        style: {
+          margin: '0',
+          transform: 'none',
+          left: '0',
+          top: '0',
+          position: 'static',
+          boxSizing: 'border-box'
+        }
       });
 
-      if (!blob) {
-        throw new Error('No se pudo generar el Blob de la imagen');
-      }
+      if (!blob) throw new Error('Blob nulo generado por html-to-image');
 
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob })
       ]);
 
-      const target = this.selectedTarget();
-      const label = this.viewMode() === 'single_card' && target ? `de ${target.country}` : '';
-      this.copyStatus.set('✓ ¡Copiada!');
-      this.showToast(`¡Imagen ${label} copiada al portapapeles!`);
-      setTimeout(() => {
-        this.copyStatus.set('📷 Copiar Imagen');
-      }, 3000);
+      this.showToast(`¡Imagen de ${titleLabel} copiada al portapapeles!`);
     } catch (err) {
       console.error('Error al copiar imagen:', err);
-      this.copyStatus.set('Error al copiar');
-      this.showToast('No se pudo copiar automáticamente. Usa "Descargar PNG".');
-      setTimeout(() => {
-        this.copyStatus.set('📷 Copiar Imagen');
-      }, 3000);
+      this.showToast('No se pudo copiar automáticamente. Usa el botón Descargar.');
     } finally {
       this.isExporting.set(false);
     }
   }
 
-  async downloadAsPng(): Promise<void> {
-    const node = this.getActiveCanvasNode();
-    if (!node) {
-      this.showToast('No se encontró el elemento para descargar.');
-      return;
-    }
-
+  /**
+   * Descarga la imagen en formato PNG sin desfases horizontales
+   */
+  async downloadElementPng(element: HTMLElement, filenameSuffix: string): Promise<void> {
     this.isExporting.set(true);
+    this.showToast(`Generando PNG...`);
 
     try {
-      const dataUrl = await toPng(node, {
+      const width = element.scrollWidth;
+      const height = element.scrollHeight;
+
+      const dataUrl = await toPng(element, {
         pixelRatio: 2.5,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: width,
+        height: height,
+        filter: (node: Node) => {
+          if (node instanceof HTMLElement && node.classList.contains('no-export')) {
+            return false;
+          }
+          return true;
+        },
+        style: {
+          margin: '0',
+          transform: 'none',
+          left: '0',
+          top: '0',
+          position: 'static',
+          boxSizing: 'border-box'
+        }
       });
 
-      const mode = this.viewMode();
-      let filename = `reporte_alcance_${mode}_${new Date().toISOString().split('T')[0]}.png`;
-      if (mode === 'single_card') {
-        const target = this.selectedTarget();
-        const code = target ? this.getCountryCode(target.country) : 'ficha';
-        filename = `reporte_alcance_${code}_${new Date().toISOString().split('T')[0]}.png`;
-      }
-
+      const dateStr = new Date().toISOString().split('T')[0];
       const link = document.createElement('a');
-      link.download = filename;
+      link.download = `reporte_${filenameSuffix}_${dateStr}.png`;
       link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
@@ -2191,119 +2056,42 @@ export class ReportTableModalComponent {
       this.showToast('¡Imagen PNG descargada con éxito!');
     } catch (err) {
       console.error('Error al descargar PNG:', err);
-      this.showToast('Hubo un error al generar la imagen.');
+      this.showToast('Hubo un error al generar la imagen PNG.');
     } finally {
       this.isExporting.set(false);
     }
   }
 
-  copyAsSpreadsheetTsv(): void {
-    const mode = this.viewMode();
-    let tsvContent = '';
+  /* ========================================================
+     EXPORTADORES DE TEXTO (EXCEL / TSV)
+     ======================================================== */
+  copyMatrixExcel(): void {
+    const cols = this.activeColumns();
+    if (cols.length === 0) return;
+    const platforms = this.activePlatforms();
 
-    if (mode === 'multi_matrix') {
-      const cols = this.activeColumns();
-      if (cols.length === 0) return;
-      const platforms = this.activePlatforms();
+    const header = ['MEDIO\t' + cols.map(c => this.getCountryCode(c.country)).join('\t')];
+    const body = platforms.map(p => {
+      const vals = cols.map(c => this.formatMatrixPercentage(this.getPlatformReachPercent(c, p)));
+      return [p, ...vals].join('\t');
+    });
+    const volumeRow = [
+      'Volumen total',
+      ...cols.map(c => this.formatNumber(c.crossReach ?? 0))
+    ].join('\t');
+    const totalPercentRow = [
+      'Total %',
+      ...cols.map(c => this.formatTotalPercentage(c.crossReachPercentage ?? 0))
+    ].join('\t');
 
-      const header = ['MEDIO\t' + cols.map(c => this.getCountryCode(c.country)).join('\t')];
-      const body = platforms.map(p => {
-        const vals = cols.map(c => this.formatMatrixPercentage(this.getPlatformReachPercent(c, p)));
-        return [p, ...vals].join('\t');
-      });
-      const volumeRow = [
-        'Volumen total',
-        ...cols.map(c => this.formatNumber(c.crossReach ?? 0))
-      ].join('\t');
-      const totalPercentRow = [
-        'Total %',
-        ...cols.map(c => this.formatTotalPercentage(c.crossReachPercentage ?? 0))
-      ].join('\t');
-
-      tsvContent = [...header, ...body, volumeRow, totalPercentRow].join('\n');
-
-    } else if (mode === 'single_card') {
-      const target = this.selectedTarget();
-      if (!target) return;
-      const rows = this.getActiveMediaRowsForTarget(target);
-      const lines: string[] = [
-        `PAÍS: ${target.country.toUpperCase()} (${this.getCountryCode(target.country)})\tUNIVERSO: ${this.formatNumber(target.universe ?? 0)}`,
-        'MEDIO\tREACH\t%'
-      ];
-      rows.forEach(r => {
-        lines.push(`${r.name}\t${this.formatNumber(r.reach)}\t${this.formatPercentage(r.percentage)}`);
-      });
-      lines.push(`TOTAL\t${this.formatNumber(target.crossReach ?? 0)}\t${this.formatTotalPercentage(target.crossReachPercentage ?? 0)}`);
-      tsvContent = lines.join('\n');
-
-    } else {
-      // all_grid
-      const targets = this.availableTargets();
-      const blocks: string[] = [];
-      targets.forEach(t => {
-        const rows = this.getActiveMediaRowsForTarget(t);
-        const lines: string[] = [
-          `=== ${t.country.toUpperCase()} (${this.getCountryCode(t.country)}) | UNIV: ${this.formatNumber(t.universe ?? 0)} ===`,
-          'MEDIO\tREACH\t%'
-        ];
-        rows.forEach(r => {
-          lines.push(`${r.name}\t${this.formatNumber(r.reach)}\t${this.formatPercentage(r.percentage)}`);
-        });
-        lines.push(`TOTAL\t${this.formatNumber(t.crossReach ?? 0)}\t${this.formatTotalPercentage(t.crossReachPercentage ?? 0)}`);
-        blocks.push(lines.join('\n'));
-      });
-      tsvContent = blocks.join('\n\n');
-    }
+    const tsvContent = [...header, ...body, volumeRow, totalPercentRow].join('\n');
 
     navigator.clipboard.writeText(tsvContent).then(() => {
-      this.showToast('¡Datos copiados! Pégalos directamente en Excel o Google Sheets.');
+      this.showToast('¡Datos de la matriz copiados para Excel!');
     }).catch(err => {
       console.error('Error al copiar TSV:', err);
       this.showToast('Error al copiar datos en formato Excel.');
     });
-  }
-
-  /* ========================================================
-     ACCIONES INDIVIDUALES POR TARJETA (EN 'VER TODAS')
-     ======================================================== */
-  async copySingleCardImage(target: CountryRow, element: HTMLElement): Promise<void> {
-    try {
-      this.showToast(`Generando imagen de ${target.country}...`);
-      const blob = await toBlob(element, {
-        pixelRatio: 2.5,
-        backgroundColor: '#ffffff'
-      });
-      if (!blob) throw new Error('Blob nulo');
-
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      this.showToast(`¡Ficha de ${target.country} copiada al portapapeles!`);
-    } catch (err) {
-      console.error('Error al copiar tarjeta individual:', err);
-      this.showToast(`No se pudo copiar automáticamente. Usa descargar.`);
-    }
-  }
-
-  async downloadSingleCardPng(target: CountryRow, element: HTMLElement): Promise<void> {
-    try {
-      this.showToast(`Descargando PNG de ${target.country}...`);
-      const dataUrl = await toPng(element, {
-        pixelRatio: 2.5,
-        backgroundColor: '#ffffff'
-      });
-      const code = this.getCountryCode(target.country);
-      const link = document.createElement('a');
-      link.download = `reporte_${code}_${new Date().toISOString().split('T')[0]}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      this.showToast(`¡Imagen de ${target.country} descargada!`);
-    } catch (err) {
-      console.error('Error al descargar tarjeta individual:', err);
-      this.showToast(`Error al descargar la imagen.`);
-    }
   }
 
   copySingleCardExcel(target: CountryRow): void {
