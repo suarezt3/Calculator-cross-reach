@@ -152,8 +152,8 @@ export interface MediaRowReport {
             </div>
 
             <div class="chips-container">
-              @for (col of allAvailableColumns(); track getColumnKey(col)) {
-                @let key = getColumnKey(col);
+              @for (col of allAvailableColumns(); track getTargetKey(col)) {
+                @let key = getTargetKey(col);
                 @let isSelected = isColumnActive(key);
                 <button
                   type="button"
@@ -171,6 +171,52 @@ export interface MediaRowReport {
                     }
                   </span>
 
+                  <!-- Bandera en chip -->
+                  <span class="chip-flag-box">
+                    @switch (getCountryCode(col.country)) {
+                      @case ('COL') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="24" height="8" fill="#FCD116"/>
+                          <rect y="8" width="24" height="4" fill="#003893"/>
+                          <rect y="12" width="24" height="4" fill="#CE1126"/>
+                        </svg>
+                      }
+                      @case ('MX') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="8" height="16" fill="#006847"/>
+                          <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                          <rect x="16" width="8" height="16" fill="#CE1126"/>
+                          <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                        </svg>
+                      }
+                      @case ('CHL') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="24" height="8" fill="#FFFFFF"/>
+                          <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                          <rect width="8" height="8" fill="#0039A6"/>
+                          <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                        </svg>
+                      }
+                      @case ('PER') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="8" height="16" fill="#D91023"/>
+                          <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                          <rect x="16" width="8" height="16" fill="#D91023"/>
+                        </svg>
+                      }
+                      @case ('CRI') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="24" height="16" fill="#002B7F"/>
+                          <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                          <rect y="5" width="24" height="6" fill="#CE1126"/>
+                        </svg>
+                      }
+                      @default {
+                        <span class="flag-placeholder">🌐</span>
+                      }
+                    }
+                  </span>
+
                   <span class="chip-code">{{ getCountryCode(col.country) }}</span>
                   <span class="chip-name">{{ col.country }}</span>
                   @if (col.isMarket) {
@@ -182,7 +228,7 @@ export interface MediaRowReport {
           </div>
         }
 
-        <!-- VISTA 2: Selector de Iniciales para Ficha Individual -->
+        <!-- VISTA 2: Selector de Iniciales con Bandera para Ficha Individual -->
         @if (viewMode() === 'single_card') {
           <div class="initials-selector-bar">
             <span class="initials-hint-label">Seleccionar país:</span>
@@ -198,6 +244,50 @@ export interface MediaRowReport {
                   [class.is-market]="item.isMarket"
                   [title]="item.country"
                 >
+                  <span class="tab-flag-wrap">
+                    @switch (getCountryCode(item.country)) {
+                      @case ('COL') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="24" height="8" fill="#FCD116"/>
+                          <rect y="8" width="24" height="4" fill="#003893"/>
+                          <rect y="12" width="24" height="4" fill="#CE1126"/>
+                        </svg>
+                      }
+                      @case ('MX') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="8" height="16" fill="#006847"/>
+                          <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                          <rect x="16" width="8" height="16" fill="#CE1126"/>
+                          <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                        </svg>
+                      }
+                      @case ('CHL') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="24" height="8" fill="#FFFFFF"/>
+                          <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                          <rect width="8" height="8" fill="#0039A6"/>
+                          <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                        </svg>
+                      }
+                      @case ('PER') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="8" height="16" fill="#D91023"/>
+                          <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                          <rect x="16" width="8" height="16" fill="#D91023"/>
+                        </svg>
+                      }
+                      @case ('CRI') {
+                        <svg viewBox="0 0 24 16" width="16" height="11" class="flag-inline">
+                          <rect width="24" height="16" fill="#002B7F"/>
+                          <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                          <rect y="5" width="24" height="6" fill="#CE1126"/>
+                        </svg>
+                      }
+                      @default {
+                        <span class="flag-placeholder">🌐</span>
+                      }
+                    }
+                  </span>
                   <span class="initial-code">{{ getCountryCode(item.country) }}</span>
                   <span class="initial-subname">{{ item.country }}</span>
                 </button>
@@ -211,7 +301,7 @@ export interface MediaRowReport {
           <div class="grid-info-bar">
             <span>💡</span>
             <span>
-              Mostrando <strong>{{ availableTargets().length }} fichas ejecutivas</strong> adaptadas a sus medios activos. Puedes copiar o descargar cada tarjeta con sus botones dedicados.
+              Mostrando <strong>{{ availableTargets().length }} fichas ejecutivas</strong> adaptadas con bandera y encabezado patrio. Cada tarjeta tiene sus botones para copiar o descargar de forma independiente.
             </span>
           </div>
         }
@@ -221,7 +311,11 @@ export interface MediaRowReport {
           <div class="export-toolbar">
             <div class="toolbar-hint">
               <span>💡</span>
-              <span>Usa <strong>Copiar Imagen</strong> para pegar directamente (Ctrl+V) en PowerPoint, Google Slides o Slack.</span>
+              @if (viewMode() === 'single_card') {
+                <span>Exporta la ficha ejecutiva de <strong>{{ selectedTarget()?.country }}</strong> con su bandera y formato oficial.</span>
+              } @else {
+                <span>Usa <strong>Copiar Imagen</strong> para pegar directamente (Ctrl+V) en PowerPoint, Google Slides o Slack.</span>
+              }
             </div>
 
             <div class="btn-group">
@@ -268,25 +362,67 @@ export interface MediaRowReport {
 
         <!-- Lienzo de la Tabla para Captura -->
         <div class="table-preview-scroll">
-          <div class="screenshot-canvas-wrapper" #tableCanvasContainer>
 
-            <!-- ========================================================
-                 VISTA 1: MATRIZ MULTI-PAÍS (ORIGINAL CONSOLIDADA)
-                 ======================================================== -->
-            @if (viewMode() === 'multi_matrix') {
-              @if (activeColumns().length === 0) {
-                <div class="empty-state-notice">
-                  <span class="empty-icon">🗺️</span>
-                  <p class="empty-text">Selecciona al menos un país arriba para generar la matriz comparativa.</p>
-                </div>
-              } @else {
+          <!-- ========================================================
+               VISTA 1: MATRIZ MULTI-PAÍS (ORIGINAL CONSOLIDADA)
+               ======================================================== -->
+          @if (viewMode() === 'multi_matrix') {
+            @if (activeColumns().length === 0) {
+              <div class="empty-state-notice">
+                <span class="empty-icon">🗺️</span>
+                <p class="empty-text">Selecciona al menos un país arriba para generar la matriz comparativa.</p>
+              </div>
+            } @else {
+              <div class="screenshot-canvas-wrapper" #matrixCanvas>
                 <table class="matrix-report-table">
                   <thead>
                     <tr>
                       <th class="corner-cell">MEDIO</th>
                       @for (col of activeColumns(); track col.country) {
                         <th class="country-header-cell" [class.header-market]="col.isMarket">
-                          {{ getCountryCode(col.country) }}
+                          <div class="header-flag-cell">
+                            <!-- Mini bandera en cabecera -->
+                            @switch (getCountryCode(col.country)) {
+                              @case ('COL') {
+                                <svg viewBox="0 0 24 16" width="16" height="11">
+                                  <rect width="24" height="8" fill="#FCD116"/>
+                                  <rect y="8" width="24" height="4" fill="#003893"/>
+                                  <rect y="12" width="24" height="4" fill="#CE1126"/>
+                                </svg>
+                              }
+                              @case ('MX') {
+                                <svg viewBox="0 0 24 16" width="16" height="11">
+                                  <rect width="8" height="16" fill="#006847"/>
+                                  <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                                  <rect x="16" width="8" height="16" fill="#CE1126"/>
+                                  <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                                </svg>
+                              }
+                              @case ('CHL') {
+                                <svg viewBox="0 0 24 16" width="16" height="11">
+                                  <rect width="24" height="8" fill="#FFFFFF"/>
+                                  <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                                  <rect width="8" height="8" fill="#0039A6"/>
+                                  <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                                </svg>
+                              }
+                              @case ('PER') {
+                                <svg viewBox="0 0 24 16" width="16" height="11">
+                                  <rect width="8" height="16" fill="#D91023"/>
+                                  <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                                  <rect x="16" width="8" height="16" fill="#D91023"/>
+                                </svg>
+                              }
+                              @case ('CRI') {
+                                <svg viewBox="0 0 24 16" width="16" height="11">
+                                  <rect width="24" height="16" fill="#002B7F"/>
+                                  <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                                  <rect y="5" width="24" height="6" fill="#CE1126"/>
+                                </svg>
+                              }
+                            }
+                            <span>{{ getCountryCode(col.country) }}</span>
+                          </div>
                         </th>
                       }
                     </tr>
@@ -322,136 +458,309 @@ export interface MediaRowReport {
                     </tr>
                   </tbody>
                 </table>
-              }
-            }
-
-            <!-- ========================================================
-                 VISTA 2: FICHA INDIVIDUAL (FORMATO EXACTO DE LA REFERENCIA)
-                 ======================================================== -->
-            @if (viewMode() === 'single_card') {
-              @let target = selectedTarget();
-              @if (target) {
-                @let mediaRows = getActiveMediaRowsForTarget(target);
-                <div class="single-card-render">
-                  <table class="executive-table">
-                    <thead>
-                      <tr>
-                        <th class="th-medio">MEDIO</th>
-                        <th class="th-reach">REACH</th>
-                        <th class="th-pct">%</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (row of mediaRows; track row.name) {
-                        <tr class="tr-data">
-                          <td class="td-medio">{{ row.name }}</td>
-                          <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
-                          <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
-                        </tr>
-                      }
-
-                      <!-- Fila TOTAL en Verde Salvia -->
-                      <tr class="tr-total">
-                        <td class="td-total-label">TOTAL</td>
-                        <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
-                        <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              }
-            }
-
-            <!-- ========================================================
-                 VISTA 3: VER TODAS (CUADRÍCULA CON BOTONES INDIVIDUALES)
-                 ======================================================== -->
-            @if (viewMode() === 'all_grid') {
-              <div class="all-grid-container">
-                @for (target of availableTargets(); track target.id) {
-                  @let mediaRows = getActiveMediaRowsForTarget(target);
-                  <div class="grid-card-item">
-                    <!-- Cabecera de Tarjeta con Botones de Acción Compactos -->
-                    <div class="grid-card-header">
-                      <div class="grid-card-title-group">
-                        <span class="grid-code-badge" [class.badge-market]="target.isMarket">
-                          {{ getCountryCode(target.country) }}
-                        </span>
-                        <span class="grid-country-name">{{ target.country }}</span>
-                        <span class="grid-universe">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
-                      </div>
-
-                      <!-- Botones de Acción Individuales (Icon-only compactos con tooltip) -->
-                      <div class="grid-card-actions">
-                        <button
-                          type="button"
-                          class="btn-card-icon copy"
-                          (click)="copySingleCardImage(target, cardTable)"
-                          title="Copiar imagen de {{ target.country }}"
-                          aria-label="Copiar imagen de {{ target.country }}"
-                        >
-                          <hugeicons-icon [icon]="Camera01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
-                        </button>
-                        <button
-                          type="button"
-                          class="btn-card-icon download"
-                          (click)="downloadSingleCardPng(target, cardTable)"
-                          title="Descargar PNG de {{ target.country }}"
-                          aria-label="Descargar PNG de {{ target.country }}"
-                        >
-                          <hugeicons-icon [icon]="Download01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
-                        </button>
-                        <button
-                          type="button"
-                          class="btn-card-icon excel"
-                          (click)="copySingleCardExcel(target)"
-                          title="Copiar datos de {{ target.country }} para Excel"
-                          aria-label="Copiar datos de {{ target.country }} para Excel"
-                        >
-                          <hugeicons-icon [icon]="Copy01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Tabla de la Tarjeta -->
-                    <div class="card-table-render-box" #cardTable>
-                      <table class="executive-table">
-                        <thead>
-                          <tr>
-                            <th class="th-medio">MEDIO</th>
-                            <th class="th-reach">REACH</th>
-                            <th class="th-pct">%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (row of mediaRows; track row.name) {
-                            <tr class="tr-data">
-                              <td class="td-medio">{{ row.name }}</td>
-                              <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
-                              <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
-                            </tr>
-                          }
-
-                          <!-- Fila TOTAL en Verde Salvia -->
-                          <tr class="tr-total">
-                            <td class="td-total-label">TOTAL</td>
-                            <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
-                            <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                }
               </div>
             }
+          }
 
-          </div>
+          <!-- ========================================================
+               VISTA 2: FICHA INDIVIDUAL CON CABECERA PATRIA Y BANDERA
+               ======================================================== -->
+          @if (viewMode() === 'single_card') {
+            @let target = selectedTarget();
+            @if (target) {
+              @let mediaRows = getActiveMediaRowsForTarget(target);
+              <!-- Contenedor único para la captura de Ficha Individual -->
+              <div class="single-card-render-wrapper" #singleCardCanvas>
+                <!-- Cabecera Ejecutiva con Bandera Nacional y País -->
+                <div class="executive-country-card-header">
+                  <div class="header-flag-title-group">
+                    <div class="flag-icon-container">
+                      @switch (getCountryCode(target.country)) {
+                        @case ('COL') {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="24" height="8" fill="#FCD116"/>
+                            <rect y="8" width="24" height="4" fill="#003893"/>
+                            <rect y="12" width="24" height="4" fill="#CE1126"/>
+                          </svg>
+                        }
+                        @case ('MX') {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="8" height="16" fill="#006847"/>
+                            <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                            <rect x="16" width="8" height="16" fill="#CE1126"/>
+                            <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                          </svg>
+                        }
+                        @case ('CHL') {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="24" height="8" fill="#FFFFFF"/>
+                            <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                            <rect width="8" height="8" fill="#0039A6"/>
+                            <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                          </svg>
+                        }
+                        @case ('PER') {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="8" height="16" fill="#D91023"/>
+                            <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                            <rect x="16" width="8" height="16" fill="#D91023"/>
+                          </svg>
+                        }
+                        @case ('CRI') {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="24" height="16" fill="#002B7F"/>
+                            <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                            <rect y="5" width="24" height="6" fill="#CE1126"/>
+                          </svg>
+                        }
+                        @case ('CASACA') {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="24" height="16" rx="2" fill="#EA580C"/>
+                            <text x="12" y="11.5" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">CAS</text>
+                          </svg>
+                        }
+                        @default {
+                          <svg viewBox="0 0 24 16" width="24" height="16" class="flag-render">
+                            <rect width="24" height="16" rx="2" fill="#0D9488"/>
+                            <text x="12" y="11.5" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">LAT</text>
+                          </svg>
+                        }
+                      }
+                    </div>
+
+                    <div class="country-titles">
+                      <span class="country-main-name">
+                        {{ getCountryCode(target.country) }} · {{ target.country.toUpperCase() }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="universe-badge-wrap">
+                    <span class="universe-badge-text">
+                      Universo: <strong>{{ formatNumber(target.universe ?? 0) }}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Tabla de Medios Fiel a la Referencia -->
+                <table class="executive-table">
+                  <thead>
+                    <tr>
+                      <th class="th-medio">MEDIO</th>
+                      <th class="th-reach">REACH</th>
+                      <th class="th-pct">%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of mediaRows; track row.name) {
+                      <tr class="tr-data">
+                        <td class="td-medio">{{ row.name }}</td>
+                        <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
+                        <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
+                      </tr>
+                    }
+
+                    <!-- Fila TOTAL en Verde Salvia -->
+                    <tr class="tr-total">
+                      <td class="td-total-label">TOTAL</td>
+                      <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
+                      <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          <!-- ========================================================
+               VISTA 3: VER TODAS (CUADRÍCULA CON CABECERA Y BOTONES)
+               ======================================================== -->
+          @if (viewMode() === 'all_grid') {
+            <div class="all-grid-container" #allGridCanvas>
+              @for (target of availableTargets(); track getTargetKey(target)) {
+                @let mediaRows = getActiveMediaRowsForTarget(target);
+                <div class="grid-card-item">
+                  <!-- Cabecera de Tarjeta con Bandera y Botones de Acción -->
+                  <div class="grid-card-header">
+                    <div class="grid-card-title-group">
+                      <div class="flag-icon-container">
+                        @switch (getCountryCode(target.country)) {
+                          @case ('COL') {
+                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                              <rect width="24" height="8" fill="#FCD116"/>
+                              <rect y="8" width="24" height="4" fill="#003893"/>
+                              <rect y="12" width="24" height="4" fill="#CE1126"/>
+                            </svg>
+                          }
+                          @case ('MX') {
+                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                              <rect width="8" height="16" fill="#006847"/>
+                              <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                              <rect x="16" width="8" height="16" fill="#CE1126"/>
+                              <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                            </svg>
+                          }
+                          @case ('CHL') {
+                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                              <rect width="24" height="8" fill="#FFFFFF"/>
+                              <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                              <rect width="8" height="8" fill="#0039A6"/>
+                              <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                            </svg>
+                          }
+                          @case ('PER') {
+                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                              <rect width="8" height="16" fill="#D91023"/>
+                              <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                              <rect x="16" width="8" height="16" fill="#D91023"/>
+                            </svg>
+                          }
+                          @case ('CRI') {
+                            <svg viewBox="0 0 24 16" width="18" height="12" class="flag-render">
+                              <rect width="24" height="16" fill="#002B7F"/>
+                              <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                              <rect y="5" width="24" height="6" fill="#CE1126"/>
+                            </svg>
+                          }
+                          @default {
+                            <span class="flag-placeholder">🌐</span>
+                          }
+                        }
+                      </div>
+
+                      <span class="grid-code-badge" [class.badge-market]="target.isMarket">
+                        {{ getCountryCode(target.country) }}
+                      </span>
+                      <span class="grid-country-name">{{ target.country }}</span>
+                      <span class="grid-universe">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
+                    </div>
+
+                    <!-- Botones de Acción Individuales (Icon-only compactos con tooltip) -->
+                    <div class="grid-card-actions">
+                      <button
+                        type="button"
+                        class="btn-card-icon copy"
+                        (click)="copySingleCardImage(target, cardTableWrapper)"
+                        title="Copiar imagen de {{ target.country }}"
+                        aria-label="Copiar imagen de {{ target.country }}"
+                      >
+                        <hugeicons-icon [icon]="Camera01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-card-icon download"
+                        (click)="downloadSingleCardPng(target, cardTableWrapper)"
+                        title="Descargar PNG de {{ target.country }}"
+                        aria-label="Descargar PNG de {{ target.country }}"
+                      >
+                        <hugeicons-icon [icon]="Download01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-card-icon excel"
+                        (click)="copySingleCardExcel(target)"
+                        title="Copiar datos de {{ target.country }} para Excel"
+                        aria-label="Copiar datos de {{ target.country }} para Excel"
+                      >
+                        <hugeicons-icon [icon]="Copy01Icon" [size]="14" [strokeWidth]="1.8"></hugeicons-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Bloque de la Ficha a Capturar individualmente -->
+                  <div class="card-table-render-box" #cardTableWrapper>
+                    <!-- Cabecera de captura integrada -->
+                    <div class="card-capture-banner">
+                      <div class="capture-banner-left">
+                        <div class="flag-icon-container">
+                          @switch (getCountryCode(target.country)) {
+                            @case ('COL') {
+                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                                <rect width="24" height="8" fill="#FCD116"/>
+                                <rect y="8" width="24" height="4" fill="#003893"/>
+                                <rect y="12" width="24" height="4" fill="#CE1126"/>
+                              </svg>
+                            }
+                            @case ('MX') {
+                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                                <rect width="8" height="16" fill="#006847"/>
+                                <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                                <rect x="16" width="8" height="16" fill="#CE1126"/>
+                                <circle cx="12" cy="8" r="1.5" fill="#8B5A2B"/>
+                              </svg>
+                            }
+                            @case ('CHL') {
+                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                                <rect width="24" height="8" fill="#FFFFFF"/>
+                                <rect y="8" width="24" height="8" fill="#D52B1E"/>
+                                <rect width="8" height="8" fill="#0039A6"/>
+                                <polygon points="4,2.2 4.9,5.2 2.5,3.4 5.5,3.4 3.1,5.2" fill="#FFFFFF"/>
+                              </svg>
+                            }
+                            @case ('PER') {
+                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                                <rect width="8" height="16" fill="#D91023"/>
+                                <rect x="8" width="8" height="16" fill="#FFFFFF"/>
+                                <rect x="16" width="8" height="16" fill="#D91023"/>
+                              </svg>
+                            }
+                            @case ('CRI') {
+                              <svg viewBox="0 0 24 16" width="20" height="13" class="flag-render">
+                                <rect width="24" height="16" fill="#002B7F"/>
+                                <rect y="2.5" width="24" height="11" fill="#FFFFFF"/>
+                                <rect y="5" width="24" height="6" fill="#CE1126"/>
+                              </svg>
+                            }
+                            @default {
+                              <span class="flag-placeholder">🌐</span>
+                            }
+                          }
+                        </div>
+                        <span class="capture-country-name">
+                          {{ getCountryCode(target.country) }} · {{ target.country.toUpperCase() }}
+                        </span>
+                      </div>
+                      <span class="capture-univ-tag">Univ: {{ formatNumber(target.universe ?? 0) }}</span>
+                    </div>
+
+                    <!-- Tabla del País -->
+                    <table class="executive-table">
+                      <thead>
+                        <tr>
+                          <th class="th-medio">MEDIO</th>
+                          <th class="th-reach">REACH</th>
+                          <th class="th-pct">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (row of mediaRows; track row.name) {
+                          <tr class="tr-data">
+                            <td class="td-medio">{{ row.name }}</td>
+                            <td class="td-reach tabular">{{ formatNumber(row.reach) }}</td>
+                            <td class="td-pct tabular">{{ formatPercentage(row.percentage) }}</td>
+                          </tr>
+                        }
+
+                        <!-- Fila TOTAL en Verde Salvia -->
+                        <tr class="tr-total">
+                          <td class="td-total-label">TOTAL</td>
+                          <td class="td-total-reach tabular">{{ formatNumber(target.crossReach ?? 0) }}</td>
+                          <td class="td-total-pct tabular">{{ formatTotalPercentage(target.crossReachPercentage ?? 0) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
         </div>
 
         <!-- Footer -->
         <div class="modal-footer">
           <span class="footer-note">
-            Tipografía Plus Jakarta Sans de alta fidelidad. Capturas retina 2.5x para máxima nitidez en presentaciones ejecutivas.
+            Tipografía Plus Jakarta Sans de alta fidelidad. Capturas retina 2.5x con bandera patria integrada para máxima nitidez en presentaciones.
           </span>
           <button type="button" class="btn-done" (click)="close.emit()">
             Listo
@@ -747,6 +1056,12 @@ export interface MediaRowReport {
       }
     }
 
+    .chip-flag-box {
+      display: flex;
+      align-items: center;
+      line-height: 1;
+    }
+
     .chip-checkbox {
       width: 14px;
       height: 14px;
@@ -859,6 +1174,12 @@ export interface MediaRowReport {
       &.is-market {
         border-color: #fdba74;
       }
+    }
+
+    .tab-flag-wrap {
+      display: flex;
+      align-items: center;
+      line-height: 1;
     }
 
     .initial-code {
@@ -991,7 +1312,7 @@ export interface MediaRowReport {
       padding: 24px;
       background: #f1f5f9;
       display: flex;
-      align-items: flex-start; /* CRÍTICO: align-items a flex-start evita el corte superior */
+      align-items: flex-start;
       justify-content: center;
       box-sizing: border-box;
       width: 100%;
@@ -1008,6 +1329,101 @@ export interface MediaRowReport {
       max-width: 100%;
       margin: 0 auto;
       box-sizing: border-box;
+    }
+
+    /* ========================================================
+       CABECERA EJECUTIVA DE PAÍS CON BANDERA PARA CAPTURA
+       ======================================================== */
+    .single-card-render-wrapper {
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
+      max-width: 400px;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #e2e8f0;
+      margin: 0 auto;
+    }
+
+    .executive-country-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px 10px 2px;
+      border-bottom: 2px solid #0f1f3d;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .header-flag-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flag-icon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+    .flag-render {
+      display: block;
+      border-radius: 2px;
+    }
+
+    .flag-inline {
+      display: block;
+      border-radius: 2px;
+    }
+
+    .flag-placeholder {
+      font-size: 13px;
+    }
+
+    .country-titles {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .country-main-name {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0f1f3d;
+      letter-spacing: 0.5px;
+    }
+
+    .universe-badge-wrap {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .universe-badge-text {
+      font-size: 11px;
+      color: #475569;
+
+      strong {
+        color: #0f172a;
+        font-weight: 800;
+      }
+    }
+
+    /* Header de celda en matriz con bandera */
+    .header-flag-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
     }
 
     /* ========================================================
@@ -1096,20 +1512,13 @@ export interface MediaRowReport {
     /* ========================================================
        TABLA EJECUTIVA VERTICAL (FORMATO EXACTO DE LA REFERENCIA)
        ======================================================== */
-    .single-card-render {
-      display: flex;
-      justify-content: center;
-      width: 100%;
-    }
-
     .executive-table {
       border-collapse: collapse;
       width: 100%;
-      min-width: 270px;
-      max-width: 360px;
       border: 2px solid #0f1f3d;
       background: #ffffff;
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      box-sizing: border-box;
 
       th, td {
         border: 1.5px solid #0f1f3d;
@@ -1319,10 +1728,43 @@ export interface MediaRowReport {
 
     .card-table-render-box {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       background: #ffffff;
-      padding: 4px;
-      border-radius: 6px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+    }
+
+    .card-capture-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1.5px solid #0f1f3d;
+      gap: 6px;
+    }
+
+    .capture-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .capture-country-name {
+      font-size: 12px;
+      font-weight: 900;
+      color: #0f1f3d;
+      letter-spacing: 0.4px;
+    }
+
+    .capture-univ-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     .empty-state-notice {
@@ -1385,14 +1827,18 @@ export class ReportTableModalComponent {
 
     // Inicializar columnas activas para la matriz multi-país
     if (!this.initializedSelection && list.length > 0) {
-      const allKeys = new Set(list.map(r => this.getColumnKey(r)));
+      const allKeys = new Set(list.map(r => this.getTargetKey(r)));
       this.selectedColumnKeys.set(allKeys);
       this.initializedSelection = true;
     }
 
-    // Inicializar objetivo seleccionado para la ficha individual
-    if (list.length > 0 && !this.selectedTargetKey()) {
-      this.selectedTargetKey.set(this.getTargetKey(list[0]));
+    // Inicializar objetivo seleccionado para la ficha individual si no hay o si ya no existe
+    if (list.length > 0) {
+      const currentKey = this.selectedTargetKey();
+      const stillExists = list.some(r => this.getTargetKey(r) === currentKey);
+      if (!currentKey || !stillExists) {
+        this.selectedTargetKey.set(this.getTargetKey(list[0]));
+      }
     }
   }
   get rows(): CountryRow[] {
@@ -1401,7 +1847,10 @@ export class ReportTableModalComponent {
 
   @Output() close = new EventEmitter<void>();
 
-  @ViewChild('tableCanvasContainer') tableContainer!: ElementRef<HTMLDivElement>;
+  // Referencias a los contenedores específicos de captura según la vista
+  @ViewChild('matrixCanvas') matrixCanvasRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('singleCardCanvas') singleCardCanvasRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('allGridCanvas') allGridCanvasRef?: ElementRef<HTMLDivElement>;
 
   // Iconos de Hugeicons
   readonly Camera01Icon = Camera01Icon;
@@ -1409,7 +1858,7 @@ export class ReportTableModalComponent {
   readonly Copy01Icon = Copy01Icon;
 
   // Tres Vistas Principales: 'multi_matrix' | 'single_card' | 'all_grid'
-  viewMode = signal<'multi_matrix' | 'single_card' | 'all_grid'>('multi_matrix');
+  viewMode = signal<'multi_matrix' | 'single_card' | 'all_grid'>('single_card');
 
   // Opciones de formato
   thousandsSeparator = signal<'comma' | 'dot'>('comma');
@@ -1419,7 +1868,7 @@ export class ReportTableModalComponent {
   private initializedSelection = false;
   selectedColumnKeys = signal<Set<string>>(new Set());
 
-  // Estado para la Ficha Individual
+  // Estado para la Ficha Individual: clave basada en el nombre canónico del país
   selectedTargetKey = signal<string>('');
 
   isExporting = signal<boolean>(false);
@@ -1469,7 +1918,7 @@ export class ReportTableModalComponent {
   activeColumns = computed(() => {
     const list = this._rows();
     const selected = this.selectedColumnKeys();
-    return list.filter(r => selected.has(this.getColumnKey(r)));
+    return list.filter(r => selected.has(this.getTargetKey(r)));
   });
 
   activePlatforms = computed(() => {
@@ -1498,18 +1947,26 @@ export class ReportTableModalComponent {
     return this._rows();
   });
 
+  /**
+   * Objetivo seleccionado actualmente para la Ficha Individual.
+   * Totalmente resistente a cambios de IDs; si la clave no coincide, devuelve el primer país.
+   */
   selectedTarget = computed<CountryRow | null>(() => {
-    const key = this.selectedTargetKey();
-    if (!key) return this._rows()[0] || null;
-    return this._rows().find(r => this.getTargetKey(r) === key) || this._rows()[0] || null;
+    const list = this._rows();
+    if (list.length === 0) return null;
+    const key = this.selectedTargetKey().trim().toLowerCase();
+    if (key) {
+      const match = list.find(r => this.getTargetKey(r) === key);
+      if (match) return match;
+    }
+    return list[0];
   });
 
-  getColumnKey(col: CountryRow): string {
-    return col.id || col.country.trim().toLowerCase();
-  }
-
+  /**
+   * Clave canónica única basada en el nombre del territorio
+   */
   getTargetKey(target: CountryRow): string {
-    return target.id || target.country.trim().toLowerCase();
+    return (target.country || '').trim().toLowerCase();
   }
 
   isColumnActive(key: string): boolean {
@@ -1529,7 +1986,7 @@ export class ReportTableModalComponent {
   }
 
   selectAllColumns(): void {
-    const all = new Set(this.allAvailableColumns().map(c => this.getColumnKey(c)));
+    const all = new Set(this.allAvailableColumns().map(c => this.getTargetKey(c)));
     this.selectedColumnKeys.set(all);
   }
 
@@ -1643,15 +2100,33 @@ export class ReportTableModalComponent {
   }
 
   /* ========================================================
+     OBTENCIÓN DEL NODO ACTIVO PARA CAPTURA
+     ======================================================== */
+  private getActiveCanvasNode(): HTMLElement | null {
+    const mode = this.viewMode();
+    if (mode === 'single_card') {
+      return this.singleCardCanvasRef?.nativeElement || null;
+    }
+    if (mode === 'multi_matrix') {
+      return this.matrixCanvasRef?.nativeElement || null;
+    }
+    return this.allGridCanvasRef?.nativeElement || null;
+  }
+
+  /* ========================================================
      EXPORTADORES GENERALES (MATRIZ O FICHA INDIVIDUAL)
      ======================================================== */
   async copyImageToClipboard(): Promise<void> {
-    if (!this.tableContainer?.nativeElement) return;
+    const node = this.getActiveCanvasNode();
+    if (!node) {
+      this.showToast('No se encontró el elemento para copiar.');
+      return;
+    }
+
     this.isExporting.set(true);
     this.copyStatus.set('Generando imagen...');
 
     try {
-      const node = this.tableContainer.nativeElement;
       const blob = await toBlob(node, {
         pixelRatio: 2.5,
         backgroundColor: '#ffffff'
@@ -1665,8 +2140,10 @@ export class ReportTableModalComponent {
         new ClipboardItem({ 'image/png': blob })
       ]);
 
+      const target = this.selectedTarget();
+      const label = this.viewMode() === 'single_card' && target ? `de ${target.country}` : '';
       this.copyStatus.set('✓ ¡Copiada!');
-      this.showToast('¡Imagen copiada al portapapeles! Puedes pegarla con Ctrl+V.');
+      this.showToast(`¡Imagen ${label} copiada al portapapeles!`);
       setTimeout(() => {
         this.copyStatus.set('📷 Copiar Imagen');
       }, 3000);
@@ -1683,11 +2160,15 @@ export class ReportTableModalComponent {
   }
 
   async downloadAsPng(): Promise<void> {
-    if (!this.tableContainer?.nativeElement) return;
+    const node = this.getActiveCanvasNode();
+    if (!node) {
+      this.showToast('No se encontró el elemento para descargar.');
+      return;
+    }
+
     this.isExporting.set(true);
 
     try {
-      const node = this.tableContainer.nativeElement;
       const dataUrl = await toPng(node, {
         pixelRatio: 2.5,
         backgroundColor: '#ffffff'
@@ -1745,7 +2226,10 @@ export class ReportTableModalComponent {
       const target = this.selectedTarget();
       if (!target) return;
       const rows = this.getActiveMediaRowsForTarget(target);
-      const lines: string[] = ['MEDIO\tREACH\t%'];
+      const lines: string[] = [
+        `PAÍS: ${target.country.toUpperCase()} (${this.getCountryCode(target.country)})\tUNIVERSO: ${this.formatNumber(target.universe ?? 0)}`,
+        'MEDIO\tREACH\t%'
+      ];
       rows.forEach(r => {
         lines.push(`${r.name}\t${this.formatNumber(r.reach)}\t${this.formatPercentage(r.percentage)}`);
       });
@@ -1758,7 +2242,10 @@ export class ReportTableModalComponent {
       const blocks: string[] = [];
       targets.forEach(t => {
         const rows = this.getActiveMediaRowsForTarget(t);
-        const lines: string[] = [`=== ${t.country} (${this.getCountryCode(t.country)}) ===`, 'MEDIO\tREACH\t%'];
+        const lines: string[] = [
+          `=== ${t.country.toUpperCase()} (${this.getCountryCode(t.country)}) | UNIV: ${this.formatNumber(t.universe ?? 0)} ===`,
+          'MEDIO\tREACH\t%'
+        ];
         rows.forEach(r => {
           lines.push(`${r.name}\t${this.formatNumber(r.reach)}\t${this.formatPercentage(r.percentage)}`);
         });
@@ -1821,7 +2308,10 @@ export class ReportTableModalComponent {
 
   copySingleCardExcel(target: CountryRow): void {
     const rows = this.getActiveMediaRowsForTarget(target);
-    const lines: string[] = ['MEDIO\tREACH\t%'];
+    const lines: string[] = [
+      `PAÍS: ${target.country.toUpperCase()} (${this.getCountryCode(target.country)})\tUNIVERSO: ${this.formatNumber(target.universe ?? 0)}`,
+      'MEDIO\tREACH\t%'
+    ];
     rows.forEach(r => {
       lines.push(`${r.name}\t${this.formatNumber(r.reach)}\t${this.formatPercentage(r.percentage)}`);
     });

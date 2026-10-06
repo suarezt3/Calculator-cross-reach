@@ -1,6 +1,6 @@
 {
-  "summary": "Plan de implementación para corregir la visualización y corte de la primera tabla en 'Ver Todas', unificar el ajuste de decimales a todos los porcentajes de la tabla (enteros 37% vs 2 decimales 37.20%), e incorporar botones de exportación individuales compactos (solo iconos) en cada tarjeta.",
-  "updatedAt": "2026-10-06T20:12:11.712287541Z",
+  "summary": "Plan para corregir la exportación de datos vacíos en Ficha Individual e incorporar cabeceras ejecutivas con bandera patria y nombre de país en las tablas descargadas.",
+  "updatedAt": "2026-10-06T20:38:00.246629871Z",
   "requestFeedback": true,
   "userFacing": true
 }

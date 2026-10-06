@@ -1,51 +1,61 @@
-# Ajustes de Visualización en 'Ver Todas', Botones de Exportación por Tarjeta y Control Global de Decimales
+# Corrección de Exportación en Ficha Individual y Cabecera Ejecutiva con Bandera de País
 
-Corrección estructural del contenedor de desplazamiento para evitar el corte superior de la primera tabla en la vista 'Ver Todas', implementación de botones de acción compactos (solo iconos) en la cabecera de cada tarjeta individual, y unificación del selector de decimales para que aplique de manera homogénea a todos los porcentajes de la tabla (enteros sin decimales vs dos decimales).
+Solución al problema de datos vacíos al copiar o descargar en la vista de Ficha Individual, e incorporación de una cabecera ejecutiva integrada a las tablas individuales (con bandera patria estilizada, código y nombre del país, y universo objetivo) tanto en visualización como en las imágenes PNG y datos de portapapeles exportados.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
 > **Decisiones confirmadas por el usuario:**
-> - **Alcance del Selector de Decimales:** El selector de decimales se aplica globalmente a **todos los porcentajes** de la tabla (tanto a cada medio individual como al total), permitiendo alternar entre:
->   - **Enteros:** `37%`, `30%`, `18%`, `64%` (0 decimales).
->   - **Dos Decimales:** `37.20%`, `29.81%`, `17.56%`, `64.00%` (2 decimales).
-> - **Botones de Exportación por Ficha Individual en 'Ver Todas':** Cada tarjeta de país/mercado contará con sus propios botones de acción compactos (solo iconos vectoriales de 28x28px con tooltip):
->   - 📸 **Copiar Imagen** de esa ficha específica.
->   - 📥 **Descargar PNG** de esa ficha específica.
->   - 📋 **Copiar Datos (Excel)** de esa ficha específica.
-> - **Corrección de Desplazamiento y Visibilidad:** Se corrige la regla CSS `align-items: center` del contenedor de desplazamiento que provocaba el recorte y ocultamiento de la parte superior de la primera tarjeta, alineando el contenido a `flex-start` para asegurar que todas las tablas sean 100% visibles y desplazables desde el primer pixel.
+> - **Causa y Solución de Exportación Vacía:**
+>   - La clave `selectedTargetKey` utilizaba identificadores dinámicos que quedaban desincronizados al recalcular la matriz, provocando que `selectedTarget()` evaluara a `null` y se copiara/descargara contenido en blanco.
+>   - Se normaliza la vinculación por nombre canónico de país (`country.toLowerCase()`), garantizando que siempre exista un objetivo activo y que tanto la imagen del lienzo como el texto para Excel capturen los datos reales de la ficha.
+> - **Cabecera Ejecutiva con Bandera Nacional:**
+>   - Toda tabla individual (tanto en **Ficha Individual** como en las tarjetas de **Ver Todas**) incluirá en su parte superior una barra ejecutiva con la bandera del país en gráficos vectoriales nítidos (amarillo, azul y rojo para Colombia; tricolor con escudo para México; franja azul, estrella y rojo para Chile; rojo y blanco para Perú; azul, blanco y rojo para Costa Rica; y distintivos regionales para Casaca y Latam).
+>   - Se muestran las iniciales (`COL`, `MX`, etc.), el nombre completo del país y el universo demográfico.
+>   - Esta cabecera forma parte del bloque de captura, de modo que al descargar el PNG o copiar la imagen, el archivo contiene formalmente el país identificado.
 
 ---
 
 ## 1. Overview & Core Concept
 
-1. **Visibilidad Total de la Cuadrícula:** Al abrir 'Ver Todas', el planificador de medios verá inmediatamente la cabecera completa de la primera tabla (`MEDIO | REACH | %`) sin recortes ni solapamientos, con un flujo vertical limpio y fluido.
-2. **Acciones Inmediatas por Territorio:** En lugar de tener que salir de 'Ver Todas' para exportar un país concreto, cada tarjeta ofrece sus micro-botones para copiar o descargar esa ficha directamente con un solo clic.
-3. **Consistencia Numérica en Porcentajes:** El control de decimales garantiza que no haya discrepancias entre los medios individuales y la fila TOTAL, mostrando una tabla visualmente uniforme.
+1. **Exportación 100% Confiable:** Al hacer clic en *Copiar Imagen*, *Descargar PNG* o *Copiar Datos (Excel)* en Ficha Individual, el sistema exporta de inmediato la tabla con sus medios activos, cifras y totales, sin vacíos ni pantallas blancas.
+2. **Identificación Inmediata en Presentaciones:** Al pegar la imagen capturada en PowerPoint o enviarla por Slack, cualquier persona identificará al instante el mercado gracias a la bandera y el encabezado del país sobre la tabla de medios.
 
 ---
 
 ## 2. User Experience & Visual Design
 
-### Nueva Cabecera de Tarjeta en 'Ver Todas':
+### Nueva Ficha Individual Ejecutiva con Bandera (Captura y Visualización):
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│  [ COL ] Colombia   Univ: 27,000,000    [ 📸 ] [ 📥 ] [ 📋 ]  <-- Iconos compactos
-├────────────────────────────────────────────────────────┤
-│  MEDIO          │      REACH        │      %           │
+│  🇨🇴  COL · COLOMBIA              Universo: 27,000,000  │  <-- Cabecera con Bandera
+├─────────────────┬───────────────────┬──────────────────┤
+│  MEDIO          │      REACH        │      %           │  <-- Cabecera azul marino (#0f1f3d)
 ├─────────────────┼───────────────────┼──────────────────┤
-│  Meta           │    18,500,000     │   68.52%         │
-│  YouTube        │    14,200,000     │   52.59%         │
-│  TikTok         │     8,900,000     │   32.96%         │
+│  Meta           │    18,500,000     │   69%            │
+│  YouTube        │    14,200,000     │   53%            │
+│  TikTok         │     8,900,000     │   33%            │
+│  Netflix        │     1,850,000     │    7%            │
+│  Disney         │     1,100,000     │    4%            │
+│  Display        │     2,400,000     │    9%            │
+│  OOH            │       950,000     │    4%            │
+│  DOOH           │       550,000     │    2%            │
 ├─────────────────┼───────────────────┼──────────────────┤
-│  TOTAL          │    24,150,000     │   89.44%         │
-└────────────────────────────────────────────────────────┘
+│  TOTAL          │    24,150,000     │   89%            │  <-- Fila verde salvia (#c8dfc4)
+└─────────────────┴───────────────────┴──────────────────┘
 ```
 
-- **Dimensiones de los botones por tarjeta:** Cuadrados de `26x26px`, diseño sutil sin estorbar el espacio visual.
-- **Tooltips descriptivos:** *"Copiar imagen de Colombia"*, *"Descargar PNG de Colombia"*, *"Copiar datos de Colombia para Excel"*.
-- **Contenedor Scroll:** Cambio de `align-items: center` a `align-items: flex-start; padding-top: 24px;` para garantizar que el primer elemento nunca quede truncado en la parte superior.
+- **Renderizado de Banderas:** Gráficos vectoriales SVG puros integrados directamente en el DOM, garantizando renderizado instantáneo en `html-to-image` sin peticiones externas ni problemas de CORS.
+- **Formato TSV para Excel:**
+  ```tsv
+  PAÍS: COLOMBIA (COL)	UNIVERSO: 27,000,000
+  MEDIO	REACH	%
+  Meta	18,500,000	69%
+  YouTube	14,200,000	53%
+  ...
+  TOTAL	24,150,000	89%
+  ```
 
 ---
 
@@ -53,40 +63,37 @@ Corrección estructural del contenedor de desplazamiento para evitar el corte su
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                       ReportTableModalComponent                        │
+│                        ReportTableModalComponent                       │
 ├────────────────────────────────────────────────────────────────────────┤
-│  decimals = signal<0 | 2>(0)  <-- Aplica a getPercentage() & Total     │
-│  formatPercentage(val) = val.toFixed(decimals()) + '%'                 │
-│  formatTotalPercentage(val) = val.toFixed(decimals()) + '%'            │
+│  selectedTargetKey: string (ej: 'colombia', 'mexico', 'peru')          │
+│  selectedTarget = computed(() => list.find(r => r.country === key))   │
+│  singleCardCanvas: ElementRef (Contenedor que incluye Bandera + Tabla) │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
         ┌───────────────────────────┴───────────────────────────┐
         ▼                                                       ▼
 ┌───────────────────────────────┐       ┌───────────────────────────────┐
-│     Acciones Globales         │       │    Acciones por Tarjeta       │
-│ • Exportar Mosaico Completo   │       │ • copySingleCard(target, el)  │
-│ • Cambiar Vistas              │       │ • downloadSingleCard(target)  │
-│ • Selector de Decimales       │       │ • copySingleTsv(target)       │
+│     Captura de Imagen (PNG)   │       │     Copiado TSV (Excel)       │
+│ • toBlob(singleCardCanvas)    │       │ • Encabezado de País + Univ   │
+│ • pixelRatio: 2.5 (Retina)    │       │ • Filas de Medios Activos     │
+│ • Descarga o Portapapeles     │       │ • Fila TOTAL Deduplicado      │
 └───────────────────────────────┘       └───────────────────────────────┘
 ```
 
-1. **Lógica de Formato Homogénea:**
-   - La función `formatPercentage(val)` leerá directamente `this.decimals()` (0 o 2).
-   - La función `formatMatrixPercentage(val)` leerá `this.decimals()`.
-   - La función `formatTotalPercentage(val)` leerá `this.decimals()`.
-   - Resultado: Todos los porcentajes de la vista se transforman simultáneamente de `37%` a `37.20%` y viceversa.
-2. **Exportador Individual por Elemento HTML:**
-   - Se crea un método `copyTargetImage(target, targetElement)` y `downloadTargetImage(target, targetElement)` que renderiza únicamente el nodo DOM de esa ficha mediante `toBlob`/`toPng` con `pixelRatio: 2.5`.
+1. **Resolución del Fallo de Datos Vacíos:**
+   - La selección del país se amarra de manera inmutable al nombre canónico (`country.toLowerCase()`).
+   - Se asegura que `#singleCardCanvas` envuelva tanto la cabecera del país con bandera como la tabla, y que `copyImageToClipboard` y `downloadAsPng` capturen exactamente ese nodo activo.
+2. **Generador SVG de Banderas:**
+   - Función auxiliar o template con los vectores oficiales de Colombia, México, Chile, Perú, Costa Rica, Casaca y Latam.
 
 ---
 
 ## 4. Plan de Tareas de Implementación
 
 1. **Actualizar `ReportTableModalComponent`:**
-   - Corregir el CSS de `.table-preview-scroll` (`align-items: flex-start; justify-content: center; padding-top: 24px;`).
-   - Unificar la señal `decimals = signal<0 | 2>(0)` para que afecte a todos los porcentajes de la tabla (medios individuales y fila TOTAL).
-   - Actualizar el control segmentado en la cabecera: `% Decimales: [ 37% ] [ 37.20% ]`.
-   - Agregar en cada tarjeta de 'Ver Todas' la barra de herramientas compacta con 3 iconos vectoriales (Copiar Imagen, Descargar PNG, Copiar Excel).
-   - Implementar los manejadores individuales de captura y copia TSV por tarjeta.
+   - Corregir la reactividad de `selectedTargetKey` y `selectedTarget`.
+   - Incorporar la cabecera ejecutiva con bandera SVG a la ficha individual y a las tarjetas de 'Ver Todas'.
+   - Ajustar el selector de nodo en `copyImageToClipboard` y `downloadAsPng` para enfocar directamente el contenedor de la ficha seleccionada.
+   - Enriquecer `copyAsSpreadsheetTsv` para incluir el país y su universo en los datos tabulados de Excel.
 2. **Verificación y Compilación:**
-   - Ejecutar `compile_applet`, verificar la ausencia de errores y validar la respuesta del servidor en vivo.
+   - Ejecutar `compile_applet`, verificar la compilación sin errores y probar la respuesta del servidor en vivo.
