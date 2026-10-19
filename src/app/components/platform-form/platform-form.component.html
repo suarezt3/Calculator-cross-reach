@@ -42,13 +42,15 @@
         >
           <option value="" disabled selected>Seleccionar país...</option>
           @for (c of availableCountries(); track c.name) {
-            <option [value]="c.name">{{ c.name }}</option>
+            <option [value]="c.name">
+              {{ c.name }}{{ isCountryInTable(c.name) ? ' (En tabla • Agregar/actualizar canales)' : '' }}
+            </option>
           }
         </select>
       </div>
       <span class="field-hint">
-        @if (availableCountries().length === 0) {
-          Todos los países disponibles ya están en la tabla
+        @if (isSelectedCountryInTable()) {
+          <strong style="color: #4338ca;">🔄 {{ country() }} ya está en la tabla:</strong> los canales que agregues aquí se fusionarán o actualizarán sobre su fila actual.
         } @else {
           Selecciona un mercado para cargar la población base sugerida
         }
@@ -169,7 +171,11 @@
       (click)="submitForm()"
       class="btn-submit-scenario"
     >
-      <span>🚀 Calcular & Ejecutar Escenario</span>
+      @if (isSelectedCountryInTable()) {
+        <span>🔄 Actualizar y Fusionar Canales en {{ country() }}</span>
+      } @else {
+        <span>🚀 Calcular & Ejecutar Escenario</span>
+      }
     </button>
     <button
       type="button"

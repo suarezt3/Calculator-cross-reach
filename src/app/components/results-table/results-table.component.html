@@ -123,7 +123,18 @@
               @if (editingId() === row.id) {
                 <!-- MODO EDICIÓN -->
                 <td class="col-sticky col-country cell-edit">
-                  <span class="edit-country-name">{{ editData()?.country }}</span>
+                  <div class="edit-country-cell-wrap">
+                    <span class="edit-country-name">{{ editData()?.country }}</span>
+                    <button
+                      type="button"
+                      (click)="openQuickChannelPicker($event)"
+                      class="btn-inline-add-channel"
+                      title="Agregar un nuevo canal publicitario a {{ editData()?.country }}"
+                    >
+                      <hugeicons-icon [icon]="Add01Icon" [size]="12" [strokeWidth]="2.5"></hugeicons-icon>
+                      <span>Canal</span>
+                    </button>
+                  </div>
                 </td>
 
                 <td class="col-sticky col-universe cell-edit">
@@ -131,18 +142,28 @@
                     type="text"
                     [value]="editData()?.universe ? formatNumber(editData()!.universe) : ''"
                     (input)="onEditUniverseInput($event)"
+                    (keydown.enter)="saveEdit(row)"
+                    (keydown.escape)="cancelEdit()"
                     class="table-edit-input tabular"
                     placeholder="0"
                   />
                 </td>
 
                 @for (platform of uniquePlatforms(); track platform) {
-                  <td class="cell-edit" [style.background]="platformBgTints[platform] || 'transparent'">
+                  <td
+                    class="cell-edit"
+                    [class.cell-edit-highlighted]="highlightedPlatform() === platform"
+                    [style.background]="platformBgTints[platform] || 'transparent'"
+                  >
                     <input
                       type="text"
+                      [id]="'edit-reach-input-' + platform"
                       [value]="getEditPlatformReach(platform) > 0 ? formatNumber(getEditPlatformReach(platform)) : ''"
                       (input)="onEditReachInput(platform, $event)"
+                      (keydown.enter)="saveEdit(row)"
+                      (keydown.escape)="cancelEdit()"
                       class="table-edit-input tabular"
+                      [class.input-highlighted]="highlightedPlatform() === platform"
                       placeholder="0"
                     />
                   </td>
@@ -150,7 +171,17 @@
                 }
 
                 <td colspan="2" class="cell-edit-status">
-                  <span class="editing-pill">Modificando parámetros...</span>
+                  <div class="edit-status-flex">
+                    <button
+                      type="button"
+                      (click)="openQuickChannelPicker($event)"
+                      class="btn-status-add-channel"
+                      title="Agregar otro canal publicitario a {{ editData()?.country }}"
+                    >
+                      <hugeicons-icon [icon]="Add01Icon" [size]="13" [strokeWidth]="2.4"></hugeicons-icon>
+                      <span>Agregar Canal</span>
+                    </button>
+                  </div>
                 </td>
 
                 <td class="col-actions cell-edit-actions">
@@ -247,7 +278,7 @@
                         type="button"
                         (click)="startEdit(row)"
                         class="btn-row-action edit"
-                        title="Editar valores de {{ row.country }}"
+                        title="Editar valores o agregar canales a {{ row.country }}"
                         aria-label="Editar valores de {{ row.country }}"
                       >
                         <hugeicons-icon [icon]="Edit02Icon" [size]="15" [strokeWidth]="1.8"></hugeicons-icon>
@@ -288,3 +319,76 @@
     </div>
   }
 </div>
+
+<!-- Selector Rápido de Canal en Modo Edición -->
+@if (showAddChannelModal() && editData()) {
+  <div class="quick-channel-backdrop" (click)="closeQuickChannelPicker()">
+    <div class="quick-channel-modal" (click)="$event.stopPropagation()">
+      <div class="quick-channel-header">
+        <div>
+          <span class="quick-channel-eyebrow">Edición de Fila</span>
+          <h3 class="quick-channel-title">Agregar canal a {{ editData()?.country }}</h3>
+          <p class="quick-channel-subtitle">
+            Selecciona un medio para habilitar su columna y asignar el alcance directamente en la tabla
+          </p>
+        </div>
+        <button
+          type="button"
+          class="quick-channel-close"
+          (click)="closeQuickChannelPicker()"
+          aria-label="Cerrar selector"
+        >
+          <hugeicons-icon [icon]="Cancel01Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        </button>
+      </div>
+
+      <div class="quick-channel-grid">
+        @for (item of channelsForQuickPicker(); track item.name) {
+          <button
+            type="button"
+            class="quick-channel-card"
+            [class.is-active-channel]="item.hasValue"
+            [style.--platform-color]="platformColors[item.name] || '#4f46e5'"
+            (click)="selectChannelForEdit(item.name)"
+          >
+            <div class="quick-channel-icon">
+              <app-platform-icon [platformName]="item.name"></app-platform-icon>
+            </div>
+            <div class="quick-channel-info">
+              <span class="quick-channel-name">{{ item.name }}</span>
+              @if (item.hasValue) {
+                <span class="quick-channel-status active">
+                  ✓ {{ formatNumber(item.currentReach) }}
+                </span>
+              } @else {
+                <span class="quick-channel-status available">+ Agregar</span>
+              }
+            </div>
+          </button>
+        }
+      </div>
+
+      <!-- Opción para canal personalizado -->
+      <div class="quick-custom-channel-bar">
+        <input
+          type="text"
+          [ngModel]="customChannelName()"
+          (ngModelChange)="customChannelName.set($event)"
+          (keydown.enter)="addCustomChannelInEdit()"
+          placeholder="¿Otro medio? Escribe el nombre aquí (ej. Spotify, CTV)..."
+          class="quick-custom-input"
+        />
+        <button
+          type="button"
+          class="btn-add-custom-channel"
+          [disabled]="!customChannelName().trim()"
+          (click)="addCustomChannelInEdit()"
+        >
+          <hugeicons-icon [icon]="Add01Icon" [size]="14" [strokeWidth]="2.2"></hugeicons-icon>
+          <span>Añadir</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

@@ -1,7 +1,13 @@
 import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CountryRow, PlatformReach, PLATFORM_COLORS, PLATFORM_BG_TINTS } from '../../models/platform.models';
+import {
+  CountryRow,
+  PlatformReach,
+  AVAILABLE_PLATFORMS,
+  PLATFORM_COLORS,
+  PLATFORM_BG_TINTS
+} from '../../models/platform.models';
 import { CrossReachService } from '../../services/cross-reach.service';
 import { PlatformIconComponent } from '../../shared/components/platform-icon/platform-icon.component';
 
@@ -14,7 +20,8 @@ import {
   Cancel01Icon,
   Edit02Icon,
   Delete02Icon,
-  Tick02Icon
+  Tick02Icon,
+  Add01Icon
 } from '@hugeicons/core-free-icons';
 
 @Component({
@@ -43,11 +50,18 @@ export class ResultsTableComponent {
   readonly Edit02Icon = Edit02Icon;
   readonly Delete02Icon = Delete02Icon;
   readonly Tick02Icon = Tick02Icon;
+  readonly Add01Icon = Add01Icon;
 
   tableData = signal<CountryRow[]>([]);
   uniquePlatforms = signal<string[]>([]);
+  editAddedPlatforms = signal<string[]>([]);
   editingId = signal<string | null>(null);
   searchTerm = signal<string>('');
+
+  // Estado del selector rápido de canales en modo edición
+  showAddChannelModal = signal<boolean>(false);
+  customChannelName = signal<string>('');
+  highlightedPlatform = signal<string | null>(null);
 
   editData = signal<{
     country: string;
@@ -57,6 +71,31 @@ export class ResultsTableComponent {
 
   platformColors = PLATFORM_COLORS;
   platformBgTints = PLATFORM_BG_TINTS;
+  allCatalogPlatforms = AVAILABLE_PLATFORMS;
+
+  /**
+   * Canales del catálogo y de la tabla para mostrar en el selector rápido de la fila en edición
+   */
+  channelsForQuickPicker = computed(() => {
+    const currentEdit = this.editData();
+    const catalog = [...AVAILABLE_PLATFORMS];
+    const currentCols = this.uniquePlatforms();
+
+    currentCols.forEach(col => {
+      if (!catalog.some(c => c.toLowerCase() === col.toLowerCase())) {
+        catalog.push(col);
+      }
+    });
+
+    return catalog.map(name => {
+      const currentReach = currentEdit?.platforms[name] ?? 0;
+      return {
+        name,
+        hasValue: currentReach > 0,
+        currentReach
+      };
+    });
+  });
 
   filteredRows = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
@@ -68,8 +107,22 @@ export class ResultsTableComponent {
   constructor(public crossReachService: CrossReachService) {}
 
   private updateUniquePlatforms(): void {
-    const platforms = this.crossReachService.getAllUniquePlatforms(this.tableData());
-    this.uniquePlatforms.set(platforms);
+    const basePlatforms = this.crossReachService.getAllUniquePlatforms(this.tableData());
+    const extraPlatforms = this.editAddedPlatforms();
+
+    const combined = new Set<string>([...basePlatforms, ...extraPlatforms]);
+    const sorted: string[] = [];
+
+    AVAILABLE_PLATFORMS.forEach(canonical => {
+      const match = Array.from(combined).find(p => p.toLowerCase() === canonical.toLowerCase());
+      if (match && !sorted.includes(match)) {
+        sorted.push(match);
+        combined.delete(match);
+      }
+    });
+
+    Array.from(combined).sort().forEach(p => sorted.push(p));
+    this.uniquePlatforms.set(sorted);
   }
 
   getPlatformReach(row: CountryRow, platformName: string): number {
@@ -90,6 +143,10 @@ export class ResultsTableComponent {
     if (row.isMarket) return;
 
     this.editingId.set(row.id);
+    this.editAddedPlatforms.set([]);
+    this.showAddChannelModal.set(false);
+    this.customChannelName.set('');
+    this.highlightedPlatform.set(null);
 
     const platformsData: { [key: string]: number } = {};
     row.platforms.forEach(p => {
@@ -101,21 +158,106 @@ export class ResultsTableComponent {
       universe: row.universe ?? 0,
       platforms: platformsData
     });
+
+    this.updateUniquePlatforms();
+  }
+
+  openQuickChannelPicker(event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    this.customChannelName.set('');
+    this.showAddChannelModal.set(true);
+  }
+
+  closeQuickChannelPicker(): void {
+    this.showAddChannelModal.set(false);
+    this.customChannelName.set('');
+  }
+
+  selectChannelForEdit(platformName: string): void {
+    const cleanName = platformName.trim();
+    if (!cleanName || !this.editData()) return;
+
+    // Si la plataforma aún no es columna en la tabla, la agregamos dinámicamente
+    const currentCols = this.uniquePlatforms();
+    const existingCol = currentCols.find(c => c.toLowerCase() === cleanName.toLowerCase());
+    const targetName = existingCol || cleanName;
+
+    if (!existingCol) {
+      this.editAddedPlatforms.update(list => [...list, targetName]);
+      this.updateUniquePlatforms();
+    }
+
+    // Asegurar que exista la entrada en editData
+    const currentData = this.editData()!;
+    if (currentData.platforms[targetName] === undefined) {
+      currentData.platforms[targetName] = 0;
+      this.editData.set({
+        ...currentData,
+        platforms: { ...currentData.platforms }
+      });
+    }
+
+    this.showAddChannelModal.set(false);
+    this.customChannelName.set('');
+    this.highlightedPlatform.set(targetName);
+
+    // Enfocar automáticamente el input de ese canal en la fila editada
+    setTimeout(() => {
+      const inputEl = document.getElementById(`edit-reach-input-${targetName}`) as HTMLInputElement | null;
+      if (inputEl) {
+        inputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        inputEl.focus();
+        inputEl.select();
+      }
+      setTimeout(() => {
+        if (this.highlightedPlatform() === targetName) {
+          this.highlightedPlatform.set(null);
+        }
+      }, 2200);
+    }, 60);
+  }
+
+  addCustomChannelInEdit(): void {
+    const custom = this.customChannelName().trim();
+    if (!custom) return;
+    this.selectChannelForEdit(custom);
   }
 
   cancelEdit(): void {
     this.editingId.set(null);
     this.editData.set(null);
+    this.editAddedPlatforms.set([]);
+    this.showAddChannelModal.set(false);
+    this.customChannelName.set('');
+    this.highlightedPlatform.set(null);
+    this.updateUniquePlatforms();
   }
 
   saveEdit(row: CountryRow): void {
     const editData = this.editData();
     if (!editData) return;
 
-    const updatedPlatforms: PlatformReach[] = [];
+    const rawPlatforms: PlatformReach[] = [];
     Object.entries(editData.platforms).forEach(([platformName, reach]) => {
       if (reach > 0) {
-        updatedPlatforms.push({ platformName, reach });
+        rawPlatforms.push({ platformName, reach });
+      }
+    });
+
+    // Ordenar plataformas según el orden canónico
+    const updatedPlatforms: PlatformReach[] = [];
+    AVAILABLE_PLATFORMS.forEach(canonical => {
+      const match = rawPlatforms.find(p => p.platformName.toLowerCase() === canonical.toLowerCase());
+      if (match) {
+        updatedPlatforms.push(match);
+      }
+    });
+    rawPlatforms.forEach(p => {
+      if (!updatedPlatforms.includes(p)) {
+        updatedPlatforms.push(p);
       }
     });
 
@@ -191,3 +333,4 @@ export class ResultsTableComponent {
     this.crossReachService.exportTableToCsv(this.tableData());
   }
 }
+

@@ -170,6 +170,63 @@ export class AppComponent {
     universe: number;
     platforms: PlatformReach[];
   }): void {
+    const currentRows = this.tableData();
+    const existingRow = currentRows.find(
+      r => !r.isMarket && r.country.trim().toLowerCase() === data.country.trim().toLowerCase()
+    );
+
+    if (existingRow) {
+      // Fusionar canales existentes con los nuevos canales ingresados
+      const platformMap = new Map<string, number>();
+
+      existingRow.platforms.forEach(p => {
+        if ((p.reach ?? 0) > 0) {
+          platformMap.set(p.platformName, p.reach!);
+        }
+      });
+
+      data.platforms.forEach(p => {
+        if ((p.reach ?? 0) > 0) {
+          // Buscar si ya existe con diferente capitalización
+          const existingKey = Array.from(platformMap.keys()).find(
+            k => k.toLowerCase() === p.platformName.toLowerCase()
+          );
+          platformMap.set(existingKey || p.platformName, p.reach!);
+        }
+      });
+
+      const mergedPlatforms: PlatformReach[] = [];
+      const canonicalOrder = ['Meta', 'YouTube', 'TikTok', 'Netflix', 'Disney', 'Display', 'OOH', 'DOOH'];
+
+      canonicalOrder.forEach(canonical => {
+        const matchKey = Array.from(platformMap.keys()).find(
+          k => k.toLowerCase() === canonical.toLowerCase()
+        );
+        if (matchKey !== undefined) {
+          mergedPlatforms.push({
+            platformName: canonical,
+            reach: platformMap.get(matchKey)!
+          });
+          platformMap.delete(matchKey);
+        }
+      });
+
+      platformMap.forEach((reach, platformName) => {
+        mergedPlatforms.push({ platformName, reach });
+      });
+
+      const updatedRow: CountryRow = {
+        ...existingRow,
+        universe: data.universe > 0 ? data.universe : existingRow.universe,
+        platforms: mergedPlatforms
+      };
+
+      const updated = this.crossReachService.updateRowInTable(currentRows, updatedRow);
+      this.tableData.set(updated);
+      this.showToast(`¡Canales actualizados y fusionados en ${existingRow.country} correctamente!`);
+      return;
+    }
+
     const newRow: CountryRow = {
       id: crypto.randomUUID(),
       country: data.country,
@@ -177,7 +234,7 @@ export class AppComponent {
       platforms: data.platforms
     };
 
-    const updated = this.crossReachService.addRowToTable(this.tableData(), newRow);
+    const updated = this.crossReachService.addRowToTable(currentRows, newRow);
     this.tableData.set(updated);
   }
 
@@ -185,6 +242,7 @@ export class AppComponent {
     if (updatedRow.isMarket) return;
     const updated = this.crossReachService.updateRowInTable(this.tableData(), updatedRow);
     this.tableData.set(updated);
+    this.showToast(`¡Datos y canales de ${updatedRow.country} actualizados!`);
   }
 
   handleDeleteRow(id: string): void {

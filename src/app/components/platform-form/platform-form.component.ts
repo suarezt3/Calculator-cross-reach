@@ -47,9 +47,18 @@ export class PlatformFormComponent {
   errorMessage = signal<string | null>(null);
 
   availableCountries = computed(() => {
-    const used = this.usedCountries();
-    return COUNTRY_POPULATION_DATA.filter(c => !used.includes(c.name));
+    return COUNTRY_POPULATION_DATA;
   });
+
+  isSelectedCountryInTable = computed(() => {
+    const selected = this.country().trim().toLowerCase();
+    if (!selected) return false;
+    return this.usedCountries().some(u => u.trim().toLowerCase() === selected);
+  });
+
+  isCountryInTable(countryName: string): boolean {
+    return this.usedCountries().some(u => u.trim().toLowerCase() === countryName.trim().toLowerCase());
+  }
 
   availablePlatforms = computed(() => {
     const currentNames = this.platforms().map(p => p.platformName);

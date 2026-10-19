@@ -1,102 +1,37 @@
-# Corrección Definitiva de Recorte de Imagen e Integración de Botones en Cada Cabecera de Tabla
+# Plan de Implementación: Agregar Nuevos Canales a Países Existentes
 
-Solución al desfase horizontal y recorte en la generación de imágenes en **Matriz Multi-País** y **Ficha Individual**, e integración uniforme de los botones de acción (Copiar Imagen, Descargar PNG, Copiar Datos Excel) directamente en la cabecera de cada tabla en las tres vistas del reporte.
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> **Decisiones confirmadas por el usuario:**
-> - **Integración de Botones en la Cabecera de Cada Tabla:** En todas las vistas (**Matriz Multi-País**, **Ficha Individual** y **Ver Todas**), los botones de acción se ubican directamente en la cabecera de la tabla que representan, permitiendo una interacción contextual e inmediata y eliminando la barra superior redundante.
-> - **Causa Técnica del Recorte Lateral en la Imagen Exportada:**
->   - Las imágenes adjuntas evidenciaron un amplio espacio en blanco en el costado izquierdo con la tabla desplazada hacia la derecha y recortada en el borde.
->   - Esto ocurría porque el contenedor con `justify-content: center` y márgenes automáticos transfería un desplazamiento horizontal (`offsetLeft` / `left` relativo) al clon virtual de `html-to-image` dentro del `<foreignObject>`.
->   - En la opción de *Ver Todas*, la exportación funcionaba con total precisión porque capturaba una caja independiente con dimensiones exactas sin desfases de centrado flex.
->   - Se aplicará esa misma estructura a las tres vistas, complementado con normalización explícita de estilo (`margin: 0`, `transform: none`, `width: scrollWidth`) en `toBlob` y `toPng`.
+## Objetivo
+Permitir que el usuario agregue uno o más canales adicionales (por ejemplo, **Display**, **Netflix**, **OOH**, etc.) a cualquier país que ya se encuentre cargado en la tabla de resultados, de forma rápida, intuitiva y sin perder ni alterar ninguna funcionalidad existente.
 
 ---
 
-## 1. Overview & Core Concept
+## 1. Selector Rápido "+ Canal" en Modo Edición de la Tabla (`ResultsTableComponent`)
+Actualmente, la tabla solo muestra columnas para los canales que ya tienen datos en al menos un país (`uniquePlatforms`). Cuando un usuario edita una fila (ej. **Perú**) y necesita añadir un canal que aún no figura como columna en la tabla:
 
-1. **Imágenes Centradas al 100% Sin Desfase:** Al exportar la Matriz Multi-País o la Ficha Individual, la imagen PNG o copiada al portapapeles se generará ajustada exactamente al ancho y alto real del contenido, sin espacios vacíos a la izquierda ni tablas cortadas a la derecha.
-2. **Experiencia de Usuario Homogénea:** Todas las vistas comparten la misma interacción: la cabecera de la tabla contiene su título, bandera/identificador, métricas y los tres botones de exportación compactos (📸, 📥, 📋).
-
----
-
-## 2. User Experience & Visual Design
-
-### Cabecera Unificada para las Tres Vistas:
-
-#### Vista 1: Matriz Multi-País
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  📊 Matriz Comparativa Regional (4 Países)       [ 📸 ] [ 📥 ] [ 📋 ]  │  <-- Botones en cabecera
-├─────────────────┬───────────┬───────────┬───────────┬──────────┬───────┤
-│  MEDIO          │    COL    │    MX     │    PER    │   CHL    │ ...   │
-├─────────────────┼───────────┼───────────┼───────────┼──────────┼───────┤
-│  Meta           │    69%    │    37%    │    82%    │   82%    │ ...   │
-│  ...            │    ...    │    ...    │    ...    │   ...    │ ...   │
-├─────────────────┼───────────┼───────────┼───────────┼──────────┼───────┤
-│  Volumen total  │24.150.000 │34.135.252 │15.200.000 │7.800.000 │ ...   │
-│  Total %        │    89%    │    64%    │    82%    │   82%    │ ...   │
-└─────────────────┴───────────┴───────────┴───────────┴──────────┴───────┘
-```
-
-#### Vista 2: Ficha Individual
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  🇲🇽  MX · MÉXICO     Universo: 53,000,000        [ 📸 ] [ 📥 ] [ 📋 ]  │  <-- Botones en cabecera
-├─────────────────┬───────────────────┬──────────────────────────────────┤
-│  MEDIO          │      REACH        │      %                           │
-├─────────────────┼───────────────────┼──────────────────────────────────┤
-│  Meta           │    19,716,710     │   37%                            │
-│  YouTube        │    15,800,616     │   30%                            │
-│  ...            │        ...        │   ...                            │
-├─────────────────┼───────────────────┼──────────────────────────────────┤
-│  TOTAL          │    33,920,000     │   64%                            │
-└─────────────────┴───────────────────┴──────────────────────────────────┘
-```
-
-#### Vista 3: Ver Todas
-- Conserva sus tarjetas individuales en cuadrícula, cada una con su cabecera y sus 3 botones individuales funcionales.
+- **Botón "+ Canal" en Edición**:
+  - Al activar el modo edición en una fila (`editingId`), se mostrará un botón interactivo **"+ Canal"** tanto en la barra/cabecera de plataformas de la tabla como en la propia fila en edición.
+- **Popover / Selector Rápido de Canal**:
+  - Al hacer clic en **"+ Canal"**, se desplegará un selector ligero con los canales disponibles en el catálogo (`AVAILABLE_PLATFORMS` con sus íconos oficiales) que aún no tengan valor en ese país, más la opción de escribir un canal personalizado.
+  - Al elegir el canal (ej. **Display**), se añadirá inmediatamente la columna correspondiente a la tabla (si no existía ya) y se enfocará el campo numérico de Reach de ese canal en la fila editada para que el usuario ingrese el alcance directamente.
+  - Se podrán agregar tantos canales adicionales como se requiera en la misma sesión de edición o en ediciones posteriores.
+- **Guardado y Recálculo Automático**:
+  - Al confirmar los cambios con el botón de guardar (`✓`), se actualizará el listado de canales del país y el servicio (`CrossReachService`) recalculará automáticamente el **Cross Reach Neto Deduplicado**, el **% Cross Reach Final**, las métricas ejecutivas y los mercados regionales (**Latam** y **Casaca**).
 
 ---
 
-## 3. Technical Architecture & Data Strategy
+## 2. Fusión Inteligente desde el Formulario Superior (`App` y `PlatformFormComponent`)
+Si el usuario prefiere usar el panel superior **"Configuración de País"** seleccionando un país que ya existe en la tabla (ej. **Perú**):
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Exportador html-to-image                        │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-        ┌───────────────────────────┴───────────────────────────┐
-        ▼                                                       ▼
-┌───────────────────────────────┐       ┌───────────────────────────────┐
-│       Estructura DOM          │       │    Parámetros de Captura      │
-│ • Bloque autónomo fit-content │       │ • width: element.scrollWidth  │
-│ • Sin offset flex en ancestro │       │ • height: element.scrollHeight│
-│ • Contenedor directo sin      │       │ • style: { margin: 0,         │
-│   márgenes desfasados         │       │     transform: 'none' }       │
-└───────────────────────────────┘       └───────────────────────────────┘
-```
-
-1. **Aislamiento del Nodo a Capturar:**
-   - La tabla y su cabecera se encapsulan en una caja con clase `.exportable-card-box` (`display: flex; flex-direction: column; width: fit-content; min-width: 320px; box-sizing: border-box;`).
-   - El contenedor scroll padre usa `display: block; overflow: auto; text-align: center;` con el hijo en `display: inline-block; text-align: left;`, lo que elimina los desfases de coordenadas relativas en WebKit y Blink.
-2. **Parámetros Explícitos de Exportación:**
-   - Se asegura que `html-to-image` reciba `width: node.scrollWidth`, `height: node.scrollHeight` y `style: { margin: '0', transform: 'none', left: '0', top: '0', position: 'static' }`.
-3. **Copiado de Datos TSV:**
-   - En la Matriz: Exporta la tabla completa comparativa con columnas de países y filas de plataformas.
-   - En la Ficha Individual: Exporta los datos de ese país con su encabezado oficial de universo.
+- **Detección y Fusión sin Duplicados**:
+  - Al enviar el formulario para un país que ya está registrado en la tabla, el sistema no creará una fila duplicada.
+  - Fusionará los canales existentes del país con los nuevos canales ingresados en el formulario (actualizando el alcance si el canal ya existía o agregándolo si es nuevo, y manteniendo el Universo actualizado).
+- **Indicador Visual en el Formulario**:
+  - Cuando el usuario seleccione en el formulario un país que ya está cargado en la tabla, se mostrará un aviso sutil indicando que los canales ingresados se sumarán o actualizarán sobre el país existente.
 
 ---
 
-## 4. Plan de Tareas de Implementación
-
-1. **Actualizar `ReportTableModalComponent`:**
-   - Incorporar los botones de acción (Copiar Imagen, Descargar PNG, Copiar Datos Excel) en la cabecera de la **Matriz Multi-País**.
-   - Incorporar los botones de acción en la cabecera de la **Ficha Individual**.
-   - Eliminar la barra de exportación superior redundante para dejar un espacio limpio y directo.
-   - Reestructurar el CSS del lienzo scroll para usar un contenedor `inline-block` aislado sin desfases de flex centering.
-   - Ajustar los métodos `copyElementImage`, `downloadElementPng` y `copyAsSpreadsheetTsv` para pasar parámetros de dimensiones libres de offset a `toBlob` y `toPng`.
-2. **Verificación y Compilación:**
-   - Ejecutar `compile_applet`, verificar compilación y validar el servidor en vivo.
+## Archivos a Modificar
+1. `src/app/components/results-table/results-table.component.ts`: Lógica de columnas dinámicas adicionales durante la edición (`addedPlatformsInEdit`), apertura del selector rápido de canales y emisión de la fila actualizada.
+2. `src/app/components/results-table/results-table.component.html`: Inclusión del botón **"+ Canal"** y menú desplegable con íconos de medios durante el modo edición de una fila.
+3. `src/app/components/results-table/results-table.component.scss`: Estilos limpios para el botón **"+ Canal"** y el selector rápido flotante manteniendo la estética de la tabla.
+4. `src/app/app.ts` y `src/app/components/platform-form/platform-form.component.ts`: Lógica de fusión inteligente (`addOrMergeCountry`) cuando se agrega información para un país que ya existe en la tabla.
