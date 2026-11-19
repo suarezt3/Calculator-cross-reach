@@ -238,8 +238,10 @@ describe('ReachCurvesDocModalComponent', () => {
 
     // DV360 YouTube vs Display separation
     const ytGroup = el.querySelector('.dv360-group--youtube')?.textContent ?? '';
+    expect(ytGroup).toContain('YouTube (6 formatos)');
     for (const ytFormat of [
       'Bumper Ad',
+      'YouTube Skippable',
       'Non-Skip Trueview',
       'Non-Skip',
       'Skippable Trueview',
@@ -247,11 +249,32 @@ describe('ReachCurvesDocModalComponent', () => {
     ]) {
       expect(ytGroup).toContain(ytFormat);
     }
+    expect(ytGroup).toContain('YBA, BUM (delimitado por separadores)');
+    expect(ytGroup).toContain('BUM');
+    expect(ytGroup).toContain('YTSK');
 
     const displayGroup = el.querySelector('.dv360-group--display')?.textContent ?? '';
+    expect(displayGroup).toContain('Display (3 formatos)');
     for (const displayFormat of ['Standard Banners', 'Handraisers', 'Online Video']) {
       expect(displayGroup).toContain(displayFormat);
     }
+    expect(displayGroup).toContain('Display-OLV, OLV, Video, INSV, _V_');
+    expect(displayGroup).toContain('Display-OLV');
+    expect(displayGroup).toContain('OLV');
+
+    // DV360 strict precedence priority callout
+    const priorityCallout = el.querySelector('.dv360-priority-callout')?.textContent ?? '';
+    expect(priorityCallout).toContain('Prioridad estricta');
+    expect(priorityCallout).toContain('BUM');
+    expect(priorityCallout).toContain('YTSK');
+    expect(priorityCallout).toContain('YouTube');
+    expect(priorityCallout).toContain('YTNSTV');
+    expect(priorityCallout).toContain('YTNS');
+    expect(priorityCallout).toContain('Display-OLV');
+    expect(priorityCallout).toContain('OLV');
+    expect(priorityCallout).toContain('DISPLAY');
+    expect(priorityCallout).toContain('Online Video');
+    expect(priorityCallout).toContain('Standard Banners');
   });
 
   it('never exposes Supabase/PostgreSQL/UUID or monospace font classes across any tab', async () => {

@@ -12,6 +12,7 @@ import {
   ExchangeRateSettings,
   FileParseSummary,
   ParseExcelFilesResult,
+  PeriodOptionItem,
   PlatformFreshnessItem,
   ReachCurveFreshness,
   ReachCurvePlatform,
@@ -107,17 +108,27 @@ const BUY_TYPE_RULES: readonly BuyTypeRule[] = [
 ];
 
 const DV360_FORMAT_RULES: readonly Dv360FormatRule[] = [
-  { pattern: /YBA/i, formato: 'Bumper Ad', plataforma: 'YouTube' },
+  {
+    pattern: /YBA|(?:^|[^a-zA-Z])BUM(?:$|[^a-zA-Z])/i,
+    formato: 'Bumper Ad',
+    plataforma: 'YouTube',
+  },
+  { pattern: /YTSK/i, formato: 'YouTube Skippable', plataforma: 'YouTube' },
   { pattern: /YTNSTV/i, formato: 'Non-Skip Trueview', plataforma: 'YouTube' },
   { pattern: /YTNS/i, formato: 'Non-Skip', plataforma: 'YouTube' },
   { pattern: /YTSTV/i, formato: 'Skippable Trueview', plataforma: 'YouTube' },
+  { pattern: /DMG/i, formato: 'Demand Gen', plataforma: 'YouTube' },
+  {
+    pattern: /Display[-_ ]?OLV|(?:^|[^a-zA-Z])OLV(?:$|[^a-zA-Z])/i,
+    formato: 'Online Video',
+    plataforma: 'Display',
+  },
   {
     pattern: /STDB|DISPLAY|IBD|_D_STD_|_STD_/i,
     formato: 'Standard Banners',
     plataforma: 'Display',
   },
   { pattern: /Handraisers/i, formato: 'Handraisers', plataforma: 'Display' },
-  { pattern: /DMG/i, formato: 'Demand Gen', plataforma: 'YouTube' },
   { pattern: /Video|INSV|_V_/i, formato: 'Online Video', plataforma: 'Display' },
 ];
 
@@ -228,6 +239,8 @@ export class ReachCurveService {
     }
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
   });
+
+  readonly periodOptions = computed<PeriodOptionItem[]>(() => this.getAvailablePeriodOptions());
 
   readonly dataFreshness = computed<ReachCurveFreshness>(() => {
     const allRecords = this.records();
@@ -841,11 +854,114 @@ export class ReachCurveService {
     return { formato: 'General', plataforma: 'Display' };
   }
 
-  getAvailableCombinations(pais: string): AvailableCombinationItem[] {
+  matchesPeriodFilter(recordPeriod: string, filter?: string | null): boolean {
+    if (filter === null || filter === undefined) {
+      return true;
+    }
+    const trimmedFilter = filter.trim();
+    if (trimmedFilter.length === 0 || trimmedFilter === 'ALL') {
+      return true;
+    }
+    const trimmedRecordPeriod = recordPeriod.trim();
+    if (trimmedFilter.startsWith('YEAR:')) {
+      const year = trimmedFilter.slice(5).trim();
+      if (!/^\d{4}$/.test(year)) {
+        return false;
+      }
+      return trimmedRecordPeriod.startsWith(`${year}-`);
+    }
+    return trimmedRecordPeriod === trimmedFilter;
+  }
+
+  getAvailablePeriodOptions(pais?: string | null): PeriodOptionItem[] {
+    const trimmedPais = pais?.trim();
+    const shouldFilterByPais = Boolean(trimmedPais && trimmedPais !== 'ALL');
+
+    let totalMatchingRecords = 0;
+    const distinctMonths = new Set<string>();
+    const monthCounts = new Map<string, number>();
+    const yearCounts = new Map<string, number>();
+    const yearMonths = new Map<string, Set<string>>();
+
+    for (const record of this.records()) {
+      if (shouldFilterByPais && record.pais !== trimmedPais) {
+        continue;
+      }
+      if (record.inversion <= 0 || record.alcance <= 0) {
+        continue;
+      }
+      const validPeriod = this.extractValidPeriod(record.periodo);
+      if (!validPeriod) {
+        continue;
+      }
+
+      totalMatchingRecords += 1;
+      distinctMonths.add(validPeriod);
+      monthCounts.set(validPeriod, (monthCounts.get(validPeriod) ?? 0) + 1);
+
+      const year = validPeriod.slice(0, 4);
+      yearCounts.set(year, (yearCounts.get(year) ?? 0) + 1);
+      let monthsForYear = yearMonths.get(year);
+      if (!monthsForYear) {
+        monthsForYear = new Set<string>();
+        yearMonths.set(year, monthsForYear);
+      }
+      monthsForYear.add(validPeriod);
+    }
+
+    const totalMonthCount = distinctMonths.size;
+    const allLabel =
+      totalMonthCount > 0
+        ? `Todo el histórico (${totalMonthCount} ${totalMonthCount === 1 ? 'mes' : 'meses'})`
+        : 'Todo el histórico (0 meses)';
+
+    const options: PeriodOptionItem[] = [
+      {
+        value: 'ALL',
+        label: allLabel,
+        kind: 'all',
+        count: totalMatchingRecords,
+        monthCount: totalMonthCount,
+      },
+    ];
+
+    const sortedYears = Array.from(yearCounts.keys()).sort((a, b) => (b > a ? 1 : b < a ? -1 : 0));
+    for (const year of sortedYears) {
+      options.push({
+        value: `YEAR:${year}`,
+        label: `Año ${year}`,
+        kind: 'year',
+        count: yearCounts.get(year) ?? 0,
+        monthCount: yearMonths.get(year)?.size ?? 0,
+      });
+    }
+
+    const sortedMonths = Array.from(monthCounts.keys()).sort((a, b) =>
+      b > a ? 1 : b < a ? -1 : 0,
+    );
+    for (const period of sortedMonths) {
+      options.push({
+        value: period,
+        label: this.formatPeriodLabel(period),
+        kind: 'month',
+        count: monthCounts.get(period) ?? 0,
+        monthCount: 1,
+      });
+    }
+
+    return options;
+  }
+
+  getAvailableCombinations(pais: string, periodo?: string | null): AvailableCombinationItem[] {
     const grouped = new Map<string, AvailableCombinationItem>();
 
     for (const record of this.records()) {
-      if (record.pais !== pais || record.inversion <= 0 || record.alcance <= 0) {
+      if (
+        record.pais !== pais ||
+        record.inversion <= 0 ||
+        record.alcance <= 0 ||
+        !this.matchesPeriodFilter(record.periodo, periodo)
+      ) {
         continue;
       }
       const key = `${record.plataforma}|${record.stage}|${record.tipo_compra}|${record.corte}`;
@@ -932,7 +1048,7 @@ export class ReachCurveService {
       if (record.corte !== params.corte) {
         return false;
       }
-      if (params.periodo && params.periodo.trim().length > 0 && record.periodo !== params.periodo) {
+      if (!this.matchesPeriodFilter(record.periodo, params.periodo)) {
         return false;
       }
       const formatoFilter = params.formato?.trim();

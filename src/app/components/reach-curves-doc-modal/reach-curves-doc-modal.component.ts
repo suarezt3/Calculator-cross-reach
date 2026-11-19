@@ -251,7 +251,8 @@ const BUY_TYPE_DICTIONARY: readonly BuyTypeDictionaryItem[] = [
 ];
 
 const DV360_YOUTUBE_FORMATS: readonly Dv360FormatItem[] = [
-  { formato: 'Bumper Ad', keywords: 'YBA' },
+  { formato: 'Bumper Ad', keywords: 'YBA, BUM (delimitado por separadores)' },
+  { formato: 'YouTube Skippable', keywords: 'YTSK' },
   { formato: 'Non-Skip Trueview', keywords: 'YTNSTV' },
   { formato: 'Non-Skip', keywords: 'YTNS' },
   { formato: 'Skippable Trueview', keywords: 'YTSTV' },
@@ -261,7 +262,7 @@ const DV360_YOUTUBE_FORMATS: readonly Dv360FormatItem[] = [
 const DV360_DISPLAY_FORMATS: readonly Dv360FormatItem[] = [
   { formato: 'Standard Banners', keywords: 'STDB, DISPLAY, IBD, _D_STD_, _STD_' },
   { formato: 'Handraisers', keywords: 'Handraisers' },
-  { formato: 'Online Video', keywords: 'Video, INSV, _V_' },
+  { formato: 'Online Video', keywords: 'Display-OLV, OLV, Video, INSV, _V_' },
 ];
 
 /**

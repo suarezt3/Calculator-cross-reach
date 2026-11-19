@@ -728,7 +728,7 @@
                 <div class="dv360-group dv360-group--youtube">
                   <div class="dv360-group-header">
                     <span class="dv360-dot dv360-dot--youtube" aria-hidden="true"></span>
-                    <strong>YouTube (5 formatos)</strong>
+                    <strong>YouTube ({{ dv360YoutubeFormats.length }} formatos)</strong>
                   </div>
                   <div class="table-wrap">
                     <table class="dict-table">
@@ -765,7 +765,7 @@
                 <div class="dv360-group dv360-group--display">
                   <div class="dv360-group-header">
                     <span class="dv360-dot dv360-dot--display" aria-hidden="true"></span>
-                    <strong>Display (3 formatos)</strong>
+                    <strong>Display ({{ dv360DisplayFormats.length }} formatos)</strong>
                   </div>
                   <div class="table-wrap">
                     <table class="dict-table">
@@ -798,6 +798,24 @@
                     </table>
                   </div>
                 </div>
+              </div>
+
+              <div class="callout-info dv360-priority-callout">
+                <hugeicons-icon
+                  [icon]="InformationCircleIcon"
+                  [size]="16"
+                  [strokeWidth]="2"
+                  color="#4338ca"
+                ></hugeicons-icon>
+                <span>
+                  <strong>Prioridad estricta de clasificación:</strong> las reglas se evalúan en
+                  cascada. <strong>BUM</strong> (delimitado por separadores) y
+                  <strong>YTSK</strong> se asignan a <strong>YouTube</strong>;
+                  <strong>YTNSTV</strong> se evalúa antes que <strong>YTNS</strong>; y
+                  <strong>Display-OLV</strong> / <strong>OLV</strong> se evalúa antes que
+                  <strong>DISPLAY</strong>, de modo que <em>Display-OLV</em> clasifique como
+                  <strong>Online Video</strong> en lugar de <em>Standard Banners</em>.
+                </span>
               </div>
             </article>
           </div>

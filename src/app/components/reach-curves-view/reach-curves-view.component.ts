@@ -115,6 +115,7 @@ export class ReachCurvesViewComponent {
   readonly reachCurveService = inject(ReachCurveService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly freshnessWrapRef = viewChild<ElementRef<HTMLElement>>('freshnessWrap');
+  private readonly trmWrapRef = viewChild<ElementRef<HTMLElement>>('trmWrap');
 
   readonly notify = output<string>();
   readonly sendProjectionToMatrix = output<SendProjectionToMatrixPayload>();
@@ -155,6 +156,7 @@ export class ReachCurvesViewComponent {
   readonly isCurvesDocOpen = signal<boolean>(false);
   readonly isFreshnessPopoverOpen = signal<boolean>(false);
   readonly isFreshnessPopoverHovered = signal<boolean>(false);
+  readonly isTrmPopoverOpen = signal<boolean>(false);
   readonly isRefreshing = signal<boolean>(false);
   readonly copToUsdInput = signal<number>(4200);
   readonly mxnToUsdInput = signal<number>(20);
@@ -384,6 +386,7 @@ export class ReachCurvesViewComponent {
 
   openImportModal(): void {
     this.closeFreshnessPopover();
+    this.closeTrmPopover();
     this.showImportModal.set(true);
   }
 
@@ -393,6 +396,7 @@ export class ReachCurvesViewComponent {
 
   openCurvesDocModal(): void {
     this.closeFreshnessPopover();
+    this.closeTrmPopover();
     this.isCurvesDocOpen.set(true);
   }
 
@@ -405,6 +409,7 @@ export class ReachCurvesViewComponent {
       this.closeFreshnessPopover();
       return;
     }
+    this.closeTrmPopover();
     this.isFreshnessPopoverOpen.set(true);
   }
 
@@ -413,7 +418,28 @@ export class ReachCurvesViewComponent {
     this.isFreshnessPopoverHovered.set(false);
   }
 
+  toggleTrmPopover(): void {
+    if (this.isTrmPopoverOpen()) {
+      this.closeTrmPopover();
+      return;
+    }
+    this.closeFreshnessPopover();
+    this.isTrmPopoverOpen.set(true);
+  }
+
+  closeTrmPopover(): void {
+    this.isTrmPopoverOpen.set(false);
+    this.rateError.set(null);
+    this.rateSavedBanner.set(false);
+    const rates = this.reachCurveService.exchangeRates();
+    this.copToUsdInput.set(rates.cop_to_usd);
+    this.mxnToUsdInput.set(rates.mxn_to_usd);
+  }
+
   onFreshnessMouseEnter(): void {
+    if (this.reachCurveService.dataFreshness().hasData) {
+      this.closeTrmPopover();
+    }
     this.isFreshnessPopoverHovered.set(true);
   }
 
@@ -422,6 +448,9 @@ export class ReachCurvesViewComponent {
   }
 
   onFreshnessFocusIn(): void {
+    if (this.reachCurveService.dataFreshness().hasData) {
+      this.closeTrmPopover();
+    }
     this.isFreshnessPopoverHovered.set(true);
   }
 
@@ -438,15 +467,27 @@ export class ReachCurvesViewComponent {
     if (this.showFreshnessPopover()) {
       this.closeFreshnessPopover();
     }
+    if (this.isTrmPopoverOpen()) {
+      this.closeTrmPopover();
+    }
   }
 
   onDocumentClick(event: MouseEvent): void {
-    if (!this.showFreshnessPopover()) {
+    const target = event.target;
+    if (!(target instanceof Node)) {
       return;
     }
-    const wrap = this.freshnessWrapRef()?.nativeElement;
-    if (wrap && event.target instanceof Node && !wrap.contains(event.target)) {
-      this.closeFreshnessPopover();
+    if (this.showFreshnessPopover()) {
+      const freshnessWrap = this.freshnessWrapRef()?.nativeElement;
+      if (freshnessWrap && !freshnessWrap.contains(target)) {
+        this.closeFreshnessPopover();
+      }
+    }
+    if (this.isTrmPopoverOpen()) {
+      const trmWrap = this.trmWrapRef()?.nativeElement;
+      if (trmWrap && !trmWrap.contains(target)) {
+        this.closeTrmPopover();
+      }
     }
   }
 
@@ -537,6 +578,8 @@ export class ReachCurvesViewComponent {
       !Number.isFinite(mxnToUsd) ||
       mxnToUsd <= 0
     ) {
+      this.closeFreshnessPopover();
+      this.isTrmPopoverOpen.set(true);
       this.rateError.set('Ingresa tasas válidas mayores a 0.');
       this.rateSavedBanner.set(false);
       return;

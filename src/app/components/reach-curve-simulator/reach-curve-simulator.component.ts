@@ -61,6 +61,7 @@ import {
   CurvePlatformFilter,
   CurveStage,
   MatrixProjectionPlatform,
+  PeriodOptionItem,
   ReachCurvePlatform,
   RecordCurrency,
   RegressionModelResult,
@@ -197,6 +198,8 @@ const MIX_PLATFORMS: readonly ReachCurvePlatform[] = ['Meta', 'TikTok', 'YouTube
 
 const MIX_BUY_TYPES: readonly MixBuyType[] = ['CPM', 'CPV', 'CPC'];
 
+const CHART_FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
+
 const SCENARIO_FACTORS: ReadonlyArray<{
   readonly id: string;
   readonly label: string;
@@ -263,6 +266,7 @@ export class ReachCurveSimulatorComponent {
 
   // Global configuration bar state
   readonly selectedCountry = signal<CurveCountry>('Colombia');
+  readonly selectedPeriod = signal<string>('ALL');
   readonly selectedStage = signal<CurveStage>('ATT');
   readonly selectedCut = signal<CurveCut>('W4');
   readonly modelType = signal<CurveModelType>('logarithmic');
@@ -292,8 +296,10 @@ export class ReachCurveSimulatorComponent {
 
   private individualChartInstance: echarts.ECharts | null = null;
   private individualResizeObserver: ResizeObserver | null = null;
+  private individualResizeFrame: number | null = null;
   private mixChartInstance: echarts.ECharts | null = null;
   private mixResizeObserver: ResizeObserver | null = null;
+  private mixResizeFrame: number | null = null;
 
   readonly localCurrencyCode = computed<RecordCurrency>(() =>
     this.selectedCountry() === 'Mexico' ? 'MXN' : 'COP',
@@ -306,6 +312,29 @@ export class ReachCurveSimulatorComponent {
   readonly countryUniverse = computed<number>(() =>
     this.crossReachService.getCountryUniverse(this.selectedCountry()),
   );
+
+  readonly availablePeriodOptions = computed<readonly PeriodOptionItem[]>(() =>
+    this.reachCurveService.getAvailablePeriodOptions(this.selectedCountry()),
+  );
+
+  readonly activePeriodDisplayLabel = computed<string>(() => {
+    const period = this.selectedPeriod();
+    const matched = this.availablePeriodOptions().find((opt) => opt.value === period);
+    if (matched) {
+      return matched.label;
+    }
+    if (period.startsWith('YEAR:')) {
+      return `Año ${period.slice(5).trim()}`;
+    }
+    return period === 'ALL' ? 'Todo el histórico (0 meses)' : period;
+  });
+
+  readonly hasAnyCountryRecords = computed<boolean>(() => {
+    const country = this.selectedCountry();
+    return this.reachCurveService
+      .records()
+      .some((record) => record.pais === country && record.inversion > 0 && record.alcance > 0);
+  });
 
   readonly showFormatSelector = computed<boolean>(() => {
     const platform = this.selectedPlatform();
@@ -332,6 +361,7 @@ export class ReachCurveSimulatorComponent {
 
   readonly buyTypeAvailability = computed<readonly BuyTypeOptionStatus[]>(() => {
     const country = this.selectedCountry();
+    const period = this.selectedPeriod();
     const platform = this.selectedPlatform();
     const stage = this.selectedStage();
     const cut = this.selectedCut();
@@ -343,6 +373,9 @@ export class ReachCurveSimulatorComponent {
 
     for (const record of this.reachCurveService.records()) {
       if (record.pais !== country || record.stage !== stage || record.corte !== cut) {
+        continue;
+      }
+      if (!this.reachCurveService.matchesPeriodFilter(record.periodo, period)) {
         continue;
       }
       if (!this.matchesPlatformFilter(record.plataforma, platform)) {
@@ -367,6 +400,7 @@ export class ReachCurveSimulatorComponent {
   readonly individualHistoricalStats = computed<{ count: number; maxX: number; medianX: number }>(
     () => {
       const country = this.selectedCountry();
+      const period = this.selectedPeriod();
       const platform = this.selectedPlatform();
       const stage = this.selectedStage();
       const buyType = this.selectedBuyType();
@@ -383,6 +417,9 @@ export class ReachCurveSimulatorComponent {
           record.tipo_compra !== buyType ||
           record.corte !== cut
         ) {
+          continue;
+        }
+        if (!this.reachCurveService.matchesPeriodFilter(record.periodo, period)) {
           continue;
         }
         if (!this.matchesPlatformFilter(record.plataforma, platform)) {
@@ -446,6 +483,7 @@ export class ReachCurveSimulatorComponent {
       corte: this.selectedCut(),
       currency: this.activeCurrency(),
       modelType: this.modelType(),
+      periodo: this.selectedPeriod(),
       formato: this.effectiveFormatFilter(),
       maxInvestment: chartMaxX,
     });
@@ -525,7 +563,7 @@ export class ReachCurveSimulatorComponent {
   });
 
   readonly availableCombinations = computed<readonly AvailableCombinationItem[]>(() =>
-    this.reachCurveService.getAvailableCombinations(this.selectedCountry()),
+    this.reachCurveService.getAvailableCombinations(this.selectedCountry(), this.selectedPeriod()),
   );
 
   readonly resolvedIndividualTargetPlatform = computed<string>(() => {
@@ -540,6 +578,7 @@ export class ReachCurveSimulatorComponent {
     }
 
     const country = this.selectedCountry();
+    const period = this.selectedPeriod();
     const stage = this.selectedStage();
     const buyType = this.selectedBuyType();
     const cut = this.selectedCut();
@@ -554,7 +593,8 @@ export class ReachCurveSimulatorComponent {
         record.corte === cut &&
         record.formato === format &&
         record.inversion > 0 &&
-        record.alcance > 0
+        record.alcance > 0 &&
+        this.reachCurveService.matchesPeriodFilter(record.periodo, period)
       ) {
         subPlatforms.add(record.plataforma);
       }
@@ -569,6 +609,7 @@ export class ReachCurveSimulatorComponent {
   // Mix Cross-Channel computed evaluations
   readonly mixEvaluations = computed<readonly MixChannelEvaluation[]>(() => {
     const country = this.selectedCountry();
+    const period = this.selectedPeriod();
     const stage = this.selectedStage();
     const cut = this.selectedCut();
     const currency = this.activeCurrency();
@@ -584,6 +625,7 @@ export class ReachCurveSimulatorComponent {
         corte: cut,
         currency,
         modelType,
+        periodo: period,
       });
 
       const availableBuyTypes = MIX_BUY_TYPES.filter((buyType) =>
@@ -595,7 +637,8 @@ export class ReachCurveSimulatorComponent {
             rec.corte === cut &&
             rec.tipo_compra === buyType &&
             rec.inversion > 0 &&
-            rec.alcance > 0,
+            rec.alcance > 0 &&
+            this.reachCurveService.matchesPeriodFilter(rec.periodo, period),
         ),
       );
 
@@ -674,6 +717,7 @@ export class ReachCurveSimulatorComponent {
     effect(() => {
       const records = this.reachCurveService.records();
       const country = this.selectedCountry();
+      const period = this.selectedPeriod();
       if (this.userSelectedCut || records.length === 0) {
         return;
       }
@@ -681,7 +725,11 @@ export class ReachCurveSimulatorComponent {
       const preferredCut = CUT_AUTO_PRIORITY.find((cut) =>
         records.some(
           (rec) =>
-            rec.pais === country && rec.corte === cut && rec.inversion > 0 && rec.alcance > 0,
+            rec.pais === country &&
+            rec.corte === cut &&
+            rec.inversion > 0 &&
+            rec.alcance > 0 &&
+            this.reachCurveService.matchesPeriodFilter(rec.periodo, period),
         ),
       );
       if (preferredCut && preferredCut !== this.selectedCut()) {
@@ -695,6 +743,7 @@ export class ReachCurveSimulatorComponent {
       const currency = this.activeCurrency();
       const comboKey = [
         this.selectedCountry(),
+        this.selectedPeriod(),
         this.selectedPlatform(),
         this.selectedStage(),
         this.selectedBuyType(),
@@ -732,7 +781,7 @@ export class ReachCurveSimulatorComponent {
         this.individualChartInstance = this.initChartSafely(el);
         if (this.individualChartInstance && typeof ResizeObserver !== 'undefined') {
           this.individualResizeObserver = new ResizeObserver(() => {
-            this.individualChartInstance?.resize();
+            this.resizeChartSafely(this.individualChartInstance, el);
           });
           this.individualResizeObserver.observe(el);
         }
@@ -743,6 +792,7 @@ export class ReachCurveSimulatorComponent {
           this.buildIndividualChartOption(model, budget, reach, currency, platform),
           { notMerge: true },
         );
+        this.scheduleFrameResize('individual', el);
       }
     });
 
@@ -768,7 +818,7 @@ export class ReachCurveSimulatorComponent {
         this.mixChartInstance = this.initChartSafely(el);
         if (this.mixChartInstance && typeof ResizeObserver !== 'undefined') {
           this.mixResizeObserver = new ResizeObserver(() => {
-            this.mixChartInstance?.resize();
+            this.resizeChartSafely(this.mixChartInstance, el);
           });
           this.mixResizeObserver.observe(el);
         }
@@ -779,6 +829,7 @@ export class ReachCurveSimulatorComponent {
           this.buildMixChartOption(activeRows, summary.netCrossReach, universe),
           { notMerge: true },
         );
+        this.scheduleFrameResize('mix', el);
       }
     });
 
@@ -805,10 +856,23 @@ export class ReachCurveSimulatorComponent {
       this.convertAllBudgets(prevCurrency, nextCurrency);
     }
 
+    const currentPeriod = this.selectedPeriod();
+    if (
+      currentPeriod !== 'ALL' &&
+      !this.availablePeriodOptions().some((opt) => opt.value === currentPeriod)
+    ) {
+      this.selectedPeriod.set('ALL');
+    }
+
     const currentFormat = this.selectedFormat();
     if (currentFormat !== 'ALL' && !this.availableFormats().includes(currentFormat)) {
       this.selectedFormat.set('ALL');
     }
+  }
+
+  setPeriod(period: string): void {
+    const normalized = typeof period === 'string' ? period.trim() : '';
+    this.selectedPeriod.set(normalized.length > 0 ? normalized : 'ALL');
   }
 
   setStage(stage: CurveStage): void {
@@ -899,7 +963,10 @@ export class ReachCurveSimulatorComponent {
     const link = document.createElement('a');
     link.href = dataUrl;
     const countrySlug = this.selectedCountry().toLowerCase().replace(/\s+/g, '_');
-    link.download = `curva_${countrySlug}_${this.selectedPlatform().toLowerCase()}_${this.selectedCut()}.png`;
+    const periodSlug = this.selectedPeriod()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '_');
+    link.download = `curva_${countrySlug}_${this.selectedPlatform().toLowerCase()}_${this.selectedCut()}_${periodSlug}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1046,20 +1113,20 @@ export class ReachCurveSimulatorComponent {
       model.curvePoints.length > 0 ? model.curvePoints[model.curvePoints.length - 1].x : budget;
 
     return {
-      animationDuration: 350,
+      animationDuration: 320,
       grid: {
-        top: 42,
-        right: 28,
-        bottom: 48,
-        left: 64,
+        top: 38,
+        right: 22,
+        bottom: 34,
+        left: 58,
       },
       legend: {
-        top: 6,
-        right: 12,
+        top: 4,
+        right: 8,
         textStyle: {
           color: '#475569',
-          fontSize: 12,
-          fontFamily: 'Plus Jakarta Sans, sans-serif',
+          fontSize: 11.5,
+          fontFamily: CHART_FONT_FAMILY,
         },
       },
       tooltip: {
@@ -1071,7 +1138,7 @@ export class ReachCurveSimulatorComponent {
         textStyle: {
           color: '#f8fafc',
           fontSize: 12,
-          fontFamily: 'Plus Jakarta Sans, sans-serif',
+          fontFamily: CHART_FONT_FAMILY,
         },
         formatter: (params) => {
           const item = Array.isArray(params) ? params[0] : params;
@@ -1117,6 +1184,7 @@ export class ReachCurveSimulatorComponent {
         axisLabel: {
           color: '#64748b',
           fontSize: 11,
+          fontFamily: CHART_FONT_FAMILY,
           formatter: (val: number) => this.formatCompactCurrency(val),
         },
         splitLine: {
@@ -1133,6 +1201,7 @@ export class ReachCurveSimulatorComponent {
         axisLabel: {
           color: '#64748b',
           fontSize: 11,
+          fontFamily: CHART_FONT_FAMILY,
           formatter: (val: number) => this.formatCompactNumber(val),
         },
         splitLine: {
@@ -1179,7 +1248,7 @@ export class ReachCurveSimulatorComponent {
         {
           name: 'Escenario Simulado',
           type: 'scatter',
-          symbolSize: 16,
+          symbolSize: 15,
           data: [[budget, Math.round(projectedReach)]],
           itemStyle: {
             color: '#10b981',
@@ -1234,12 +1303,12 @@ export class ReachCurveSimulatorComponent {
     ];
 
     return {
-      animationDuration: 350,
+      animationDuration: 320,
       grid: {
-        top: 34,
-        right: 24,
-        bottom: 42,
-        left: 64,
+        top: 30,
+        right: 20,
+        bottom: 34,
+        left: 58,
       },
       tooltip: {
         trigger: 'axis',
@@ -1250,7 +1319,7 @@ export class ReachCurveSimulatorComponent {
         textStyle: {
           color: '#f8fafc',
           fontSize: 12,
-          fontFamily: 'Plus Jakarta Sans, sans-serif',
+          fontFamily: CHART_FONT_FAMILY,
         },
         formatter: (params) => {
           const item = Array.isArray(params) ? params[0] : params;
@@ -1273,6 +1342,7 @@ export class ReachCurveSimulatorComponent {
           color: '#334155',
           fontWeight: 600,
           fontSize: 11.5,
+          fontFamily: CHART_FONT_FAMILY,
           interval: 0,
         },
         axisLine: {
@@ -1286,6 +1356,7 @@ export class ReachCurveSimulatorComponent {
         axisLabel: {
           color: '#64748b',
           fontSize: 11,
+          fontFamily: CHART_FONT_FAMILY,
           formatter: (val: number) => this.formatCompactNumber(val),
         },
         splitLine: {
@@ -1296,7 +1367,7 @@ export class ReachCurveSimulatorComponent {
         {
           name: 'Alcance',
           type: 'bar',
-          barMaxWidth: 56,
+          barMaxWidth: 54,
           data: barItems,
           label: {
             show: true,
@@ -1304,6 +1375,7 @@ export class ReachCurveSimulatorComponent {
             color: '#0f172a',
             fontWeight: 700,
             fontSize: 11,
+            fontFamily: CHART_FONT_FAMILY,
             formatter: (params) => this.formatCompactNumber(Number(params.value ?? 0)),
           },
         },
@@ -1326,8 +1398,45 @@ export class ReachCurveSimulatorComponent {
     }
   }
 
+  private resizeChartSafely(instance: echarts.ECharts | null, el: HTMLDivElement): void {
+    if (!instance || instance.isDisposed()) {
+      return;
+    }
+    if (el.clientWidth > 0 && el.clientHeight > 0) {
+      instance.resize();
+    }
+  }
+
+  private scheduleFrameResize(kind: 'individual' | 'mix', el: HTMLDivElement): void {
+    if (typeof requestAnimationFrame !== 'function') {
+      return;
+    }
+    if (kind === 'individual') {
+      if (this.individualResizeFrame !== null && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.individualResizeFrame);
+      }
+      this.individualResizeFrame = requestAnimationFrame(() => {
+        this.individualResizeFrame = null;
+        this.resizeChartSafely(this.individualChartInstance, el);
+      });
+      return;
+    }
+
+    if (this.mixResizeFrame !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.mixResizeFrame);
+    }
+    this.mixResizeFrame = requestAnimationFrame(() => {
+      this.mixResizeFrame = null;
+      this.resizeChartSafely(this.mixChartInstance, el);
+    });
+  }
+
   private disposeChart(kind: 'individual' | 'mix'): void {
     if (kind === 'individual') {
+      if (this.individualResizeFrame !== null && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.individualResizeFrame);
+        this.individualResizeFrame = null;
+      }
       if (this.individualResizeObserver) {
         this.individualResizeObserver.disconnect();
         this.individualResizeObserver = null;
@@ -1339,6 +1448,10 @@ export class ReachCurveSimulatorComponent {
       return;
     }
 
+    if (this.mixResizeFrame !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.mixResizeFrame);
+      this.mixResizeFrame = null;
+    }
     if (this.mixResizeObserver) {
       this.mixResizeObserver.disconnect();
       this.mixResizeObserver = null;

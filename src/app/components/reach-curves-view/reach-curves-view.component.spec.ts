@@ -121,26 +121,59 @@ describe('ReachCurvesViewComponent', () => {
     fixture.detectChanges();
   });
 
-  it('validates and updates TRM exchange rates and emits notification', async () => {
+  it('opens TRM popover via trigger button, validates errors, saves rates, updates live trigger summary, and closes on Escape/outside click', async () => {
     const el = fixture.nativeElement as HTMLElement;
     const notifications: string[] = [];
     component.notify.subscribe((msg) => notifications.push(msg));
     const updateSpy = vi.spyOn(service, 'updateExchangeRates');
 
-    // Invalid rate <= 0 shows error and skips update
-    component.onCopRateChange(0);
-    await component.saveExchangeRates();
+    const trmTrigger = el.querySelector('.btn-trm-trigger') as HTMLButtonElement | null;
+    expect(trmTrigger).not.toBeNull();
+    expect(trmTrigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(trmTrigger?.textContent).toContain('TRM: COP 4.200 | MXN 20');
+    expect(el.querySelector('#curves-trm-popover')).toBeNull();
+
+    // Open floating TRM popover via trigger button
+    trmTrigger!.click();
     fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.isTrmPopoverOpen()).toBe(true);
+    expect(trmTrigger?.getAttribute('aria-expanded')).toBe('true');
+    const popover = el.querySelector('#curves-trm-popover');
+    expect(popover).not.toBeNull();
+    expect(popover?.querySelector('#trm-cop-usd')).not.toBeNull();
+    expect(popover?.querySelector('#trm-mxn-usd')).not.toBeNull();
+
+    // Invalid rate <= 0 shows error inside popover and skips update
+    const copInput = popover!.querySelector('#trm-cop-usd') as HTMLInputElement;
+    copInput.value = '0';
+    copInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const saveBtn = popover!.querySelector('.btn-save-trm') as HTMLButtonElement;
+    saveBtn.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(updateSpy).not.toHaveBeenCalled();
     expect(component.rateError()).toContain('mayores a 0');
-    expect(el.querySelector('.trm-feedback.error')).not.toBeNull();
+    expect(component.isTrmPopoverOpen()).toBe(true);
+    expect(el.querySelector('#curves-trm-popover .trm-feedback.error')).not.toBeNull();
 
-    // Valid rates save and sync
-    component.onCopRateChange(4000);
-    component.onMxnRateChange(18);
-    await component.saveExchangeRates();
+    // Valid rates save, sync, show success feedback, and update trigger summary
+    copInput.value = '4000';
+    copInput.dispatchEvent(new Event('input'));
+    const mxnInput = popover!.querySelector('#trm-mxn-usd') as HTMLInputElement;
+    mxnInput.value = '18';
+    mxnInput.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+
+    saveBtn.click();
+    await updateSpy.mock.results[0]?.value;
+    await Promise.resolve();
+    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(updateSpy).toHaveBeenCalledWith({
       id: 'global',
@@ -150,8 +183,37 @@ describe('ReachCurvesViewComponent', () => {
     expect(service.exchangeRates().cop_to_usd).toBe(4000);
     expect(service.exchangeRates().mxn_to_usd).toBe(18);
     expect(component.rateSavedBanner()).toBe(true);
-    expect(el.querySelector('.trm-feedback.success')).not.toBeNull();
+    expect(el.querySelector('#curves-trm-popover .trm-feedback.success')).not.toBeNull();
+    expect(trmTrigger?.textContent).toContain('TRM: COP 4.000 | MXN 18');
     expect(notifications[0]).toContain('Tasas de cambio guardadas');
+
+    // Clicking inside popover keeps it open
+    popover!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(true);
+
+    // Escape closes TRM popover
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(false);
+    expect(el.querySelector('#curves-trm-popover')).toBeNull();
+
+    // Outside click closes reopened TRM popover
+    trmTrigger!.click();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(true);
+
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(false);
+    expect(el.querySelector('#curves-trm-popover')).toBeNull();
+
+    // Calling saveExchangeRates() with invalid rate while closed opens TRM popover cleanly
+    component.onCopRateChange(0);
+    await component.saveExchangeRates();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(true);
+    expect(el.querySelector('#curves-trm-popover .trm-feedback.error')).not.toBeNull();
   });
 
   it('computes reactive KPIs, applies multi-filter combinations, and handles filtered-empty state', async () => {
@@ -368,12 +430,25 @@ describe('ReachCurvesViewComponent', () => {
     expect(el.querySelector('.font-mono')).toBeNull();
   });
 
-  it('defaults to Simulador de Curvas when records exist, removes provisional banner, and respects manual tab switching', async () => {
+  it('renders single header bar with sub-tabs, hides .coverage-kpi-grid on Simulator tab, and shows it above .audit-card on Audit tab', async () => {
     const el = fixture.nativeElement as HTMLElement;
 
     expect(el.querySelector('.phase3-banner')).toBeNull();
+    expect(el.querySelector('.module-tabs-bar')).toBeNull();
+    expect(el.querySelector('.curves-header-card .module-tabs-switcher')).not.toBeNull();
+    expect(el.querySelector('.curves-header-card .btn-doc-action')?.textContent).toContain(
+      'Guía y Fórmulas',
+    );
+    expect(el.querySelector('.curves-header-card .btn-refresh-action')?.textContent).toContain(
+      'Actualizar',
+    );
+    expect(el.querySelector('.curves-header-card .btn-primary-action')?.textContent).toContain(
+      'Importar Excel',
+    );
+
     expect(component.activeTab()).toBe('audit');
     expect(el.querySelector('app-reach-curve-simulator')).toBeNull();
+    expect(el.querySelector('#curves-panel-audit .coverage-kpi-grid')).not.toBeNull();
 
     service.records.set([
       makeRecord({
@@ -388,13 +463,17 @@ describe('ReachCurvesViewComponent', () => {
 
     expect(component.activeTab()).toBe('simulator');
     expect(el.querySelector('app-reach-curve-simulator')).not.toBeNull();
+    expect(el.querySelector('.coverage-kpi-grid')).toBeNull();
     expect(el.querySelector('.audit-card')).toBeNull();
 
-    // Switch manually to audit tab and ensure adding another record does not override manual selection
+    // Switch manually to audit tab and ensure KPI grid appears inside #curves-panel-audit above .audit-card
     (el.querySelector('#curves-tab-audit') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(component.activeTab()).toBe('audit');
-    expect(el.querySelector('.audit-card')).not.toBeNull();
+    const auditPanel = el.querySelector('#curves-panel-audit');
+    expect(auditPanel?.querySelector('.coverage-kpi-grid')).not.toBeNull();
+    expect(auditPanel?.querySelector('.audit-card')).not.toBeNull();
+    expect(el.querySelector('#curves-tab-audit .module-tab-badge')?.textContent?.trim()).toBe('1');
 
     service.records.set([
       ...service.records(),
@@ -409,11 +488,12 @@ describe('ReachCurvesViewComponent', () => {
     await fixture.whenStable();
     expect(component.activeTab()).toBe('audit');
 
-    // Switch back to simulator tab via UI click
+    // Switch back to simulator tab via UI click -> KPI grid disappears again
     (el.querySelector('#curves-tab-simulator') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(component.activeTab()).toBe('simulator');
     expect(el.querySelector('app-reach-curve-simulator')).not.toBeNull();
+    expect(el.querySelector('.coverage-kpi-grid')).toBeNull();
   });
 
   it('propagates sendProjectionToMatrix payload emitted by ReachCurveSimulatorComponent', async () => {
@@ -667,5 +747,64 @@ describe('ReachCurvesViewComponent', () => {
     await fixture.whenStable();
     expect(component.isCurvesDocOpen()).toBe(false);
     expect(el.querySelector('app-reach-curves-doc-modal [role="dialog"]')).toBeNull();
+  });
+
+  it('enforces mutual exclusion across freshness popover, TRM popover, and modals', async () => {
+    const el = fixture.nativeElement as HTMLElement;
+
+    service.records.set([
+      makeRecord({
+        campana_nombre: 'Mutex_01',
+        periodo: '2026-03',
+        updated_at: '2026-03-20T18:45:00.000Z',
+      }),
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const freshnessBtn = el.querySelector('.freshness-capsule.is-interactive') as HTMLButtonElement;
+    const trmBtn = el.querySelector('.btn-trm-trigger') as HTMLButtonElement;
+    const docBtn = el.querySelector('.btn-doc-action') as HTMLButtonElement;
+
+    // Open freshness -> open TRM closes freshness
+    freshnessBtn.click();
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(true);
+
+    trmBtn.click();
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(false);
+    expect(component.isTrmPopoverOpen()).toBe(true);
+
+    // Open freshness closes TRM
+    freshnessBtn.click();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(false);
+    expect(component.showFreshnessPopover()).toBe(true);
+
+    // Reopen TRM -> open doc modal closes TRM
+    trmBtn.click();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(true);
+
+    docBtn.click();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(false);
+    expect(component.isCurvesDocOpen()).toBe(true);
+    component.closeCurvesDocModal();
+    fixture.detectChanges();
+
+    // Reopen TRM -> open import modal closes TRM
+    trmBtn.click();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(true);
+
+    const importBtn = el.querySelector(
+      '.curves-header-card .btn-primary-action',
+    ) as HTMLButtonElement;
+    importBtn.click();
+    fixture.detectChanges();
+    expect(component.isTrmPopoverOpen()).toBe(false);
+    expect(component.showImportModal()).toBe(true);
   });
 });

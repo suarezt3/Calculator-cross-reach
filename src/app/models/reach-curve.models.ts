@@ -138,3 +138,11 @@ export interface ReachCurveFreshness {
   readonly lastUpdatedLabel: string;
   readonly byPlatform: readonly PlatformFreshnessItem[];
 }
+
+export interface PeriodOptionItem {
+  readonly value: string; // 'ALL', 'YEAR:2026', or 'YYYY-MM'
+  readonly label: string; // e.g. 'Todo el histórico (14 meses)', 'Año 2026', 'Enero 2026'
+  readonly kind: 'all' | 'year' | 'month';
+  readonly count: number;
+  readonly monthCount: number;
+}

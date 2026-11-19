@@ -173,6 +173,12 @@ describe('ReachCurveSimulatorComponent', () => {
     expect(component.rSquaredLevel()).toBe('high');
     expect(el.querySelector('.r2-badge.is-high')?.textContent).toContain('Alta confiabilidad');
 
+    // Cockpit 2x2 mini-KPI cards and full-width bottom sensitivity table exist
+    expect(el.querySelector('.cockpit-topbar')).not.toBeNull();
+    expect(el.querySelector('.cockpit-main-grid')).not.toBeNull();
+    expect(el.querySelectorAll('.mini-kpi-grid .mini-kpi-card')).toHaveLength(4);
+    expect(el.querySelector('.penetration-fill')).not.toBeNull();
+
     // Switch to linear regression and verify model & equation update
     component.setModelType('linear');
     fixture.detectChanges();
@@ -225,7 +231,7 @@ describe('ReachCurveSimulatorComponent', () => {
     expect(() => component.downloadIndividualChartPng()).not.toThrow();
 
     // UI privacy and typography check
-    expect(el.textContent ?? '').not.toMatch(/supabase|postgresql|uuid/i);
+    expect(el.textContent ?? '').not.toMatch(/supabase|postgresql|postgres|uuid/i);
     expect(el.querySelector('.font-mono')).toBeNull();
   });
 
@@ -412,6 +418,7 @@ describe('ReachCurveSimulatorComponent', () => {
 
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelectorAll('.mix-channel-row')).toHaveLength(4);
+    expect(el.querySelectorAll('.mix-strip-kpi')).toHaveLength(4);
     expect(crossReachSpy).toHaveBeenCalled();
 
     const summary = component.mixSummary();
@@ -422,11 +429,12 @@ describe('ReachCurveSimulatorComponent', () => {
     expect(summary.netCrossReach).toBeGreaterThan(0);
     expect(summary.netCpma).toBeGreaterThan(0);
 
-    // Click "Enviar Mix Completo a Matriz Cross Reach"
+    // Click "Enviar Mix a Matriz Cross Reach"
     const sendMixBtn = el.querySelector(
       '.mix-summary-card .btn-matrix-action',
     ) as HTMLButtonElement | null;
     expect(sendMixBtn).not.toBeNull();
+    expect(sendMixBtn?.textContent).toContain('Enviar Mix a Matriz Cross Reach');
     sendMixBtn?.click();
     fixture.detectChanges();
 
@@ -434,5 +442,326 @@ describe('ReachCurveSimulatorComponent', () => {
     expect(emitted[0].country).toBe('Colombia');
     expect(emitted[0].platforms.map((p) => p.platformId)).toEqual(['Meta', 'TikTok', 'YouTube']);
     expect(emitted[0].platforms.every((p) => p.reach > 0)).toBe(true);
+  });
+
+  it('filters Individual model, buyTypeAvailability, availableCombinations, auto-cut, DV360 target platform, and median budget seed by selectedPeriod (ALL, YEAR:YYYY, YYYY-MM)', async () => {
+    reachCurveService.records.set([
+      makeRecord({
+        campana_nombre: 'CO_Meta_2025_1',
+        periodo: '2025-11',
+        corte: 'W4',
+        plataforma: 'Meta',
+        stage: 'ATT',
+        tipo_compra: 'CPM',
+        inversion: 2_000_000,
+        alcance: 320_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Meta_2025_2',
+        periodo: '2025-11',
+        corte: 'W4',
+        plataforma: 'Meta',
+        stage: 'ATT',
+        tipo_compra: 'CPM',
+        inversion: 3_000_000,
+        alcance: 430_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Meta_CPE_2025',
+        periodo: '2025-10',
+        corte: 'W2',
+        plataforma: 'Meta',
+        stage: 'ATT',
+        tipo_compra: 'CPE',
+        inversion: 1_500_000,
+        alcance: 180_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Meta_2026_1',
+        periodo: '2026-01',
+        corte: 'W4',
+        plataforma: 'Meta',
+        stage: 'ATT',
+        tipo_compra: 'CPM',
+        inversion: 8_000_000,
+        alcance: 950_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Meta_2026_2',
+        periodo: '2026-01',
+        corte: 'W4',
+        plataforma: 'Meta',
+        stage: 'ATT',
+        tipo_compra: 'CPM',
+        inversion: 12_000_000,
+        alcance: 1_300_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_TT_2026_1',
+        periodo: '2026-02',
+        corte: 'W4',
+        plataforma: 'TikTok',
+        stage: 'CON',
+        tipo_compra: 'CPV',
+        inversion: 5_000_000,
+        alcance: 600_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Disp_OLV_2025',
+        periodo: '2025-11',
+        corte: 'W4',
+        plataforma: 'Display',
+        formato: 'Online Video',
+        stage: 'ATT',
+        tipo_compra: 'CPM',
+        inversion: 4_000_000,
+        alcance: 420_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_YT_OLV_2026',
+        periodo: '2026-01',
+        corte: 'W4',
+        plataforma: 'YouTube',
+        formato: 'Online Video',
+        stage: 'ATT',
+        tipo_compra: 'CPM',
+        inversion: 6_000_000,
+        alcance: 620_000,
+      }),
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const periodSelect = el.querySelector('#sim-period') as HTMLSelectElement | null;
+    expect(periodSelect).not.toBeNull();
+    expect(component.selectedPeriod()).toBe('ALL');
+
+    const options = component.availablePeriodOptions();
+    expect(options.map((o) => o.value)).toEqual([
+      'ALL',
+      'YEAR:2026',
+      'YEAR:2025',
+      '2026-02',
+      '2026-01',
+      '2025-11',
+      '2025-10',
+    ]);
+    expect(options[0].label).toBe('Todo el histórico (4 meses)');
+    expect(Array.from(periodSelect!.options).map((opt) => opt.textContent?.trim())).toEqual([
+      'Todo el histórico (4 meses)',
+      'Año 2026',
+      'Año 2025',
+      'Febrero 2026',
+      'Enero 2026',
+      'Noviembre 2025',
+      'Octubre 2025',
+    ]);
+    expect(el.querySelector('.chart-title')?.textContent).toContain('Todo el histórico (4 meses)');
+
+    // In ALL, Meta ATT CPM W4 combines 2025-11 (2) + 2026-01 (2) = 4 records
+    expect(component.individualModel().sampleSize).toBe(4);
+    expect(component.selectedCut()).toBe('W4');
+    expect(component.individualBudget()).toBe(8_000_000); // median of [2M, 3M, 8M, 12M] sorted -> index 2 = 8M
+
+    // Filter by YEAR:2026 via #sim-period select -> narrows Meta ATT CPM W4 to 2 records (2026-01) and updates median budget seed
+    periodSelect!.value = 'YEAR:2026';
+    periodSelect!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.selectedPeriod()).toBe('YEAR:2026');
+
+    expect(component.individualModel().sampleSize).toBe(2);
+    expect(component.individualBudget()).toBe(12_000_000); // median of [8M, 12M] -> index 1 = 12M
+    expect(component.buyTypeAvailability().find((b) => b.buyType === 'CPM')?.count).toBe(2);
+    expect(component.availableCombinations().every((c) => c.plataforma !== 'Display')).toBe(true);
+
+    // Filter by 2025-10 -> only W2 CPE record exists -> auto-cut switches to W2 & CPE availability updates
+    component.setPeriod('2025-10');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.selectedCut()).toBe('W2');
+    expect(component.buyTypeAvailability().find((b) => b.buyType === 'CPE')?.count).toBe(1);
+    expect(component.buyTypeAvailability().find((b) => b.buyType === 'CPM')?.count).toBe(0);
+
+    // Filter by 2026-02 -> auto-cut picks W4, Meta ATT CPM W4 has 0 records, smart empty card only suggests TikTok CON CPV W4
+    component.setPeriod('2026-02');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.selectedCut()).toBe('W4');
+    expect(component.individualModel().sampleSize).toBe(0);
+    const chips = el.querySelectorAll('.combo-chip-btn');
+    expect(chips).toHaveLength(1);
+    expect(chips[0].textContent).toContain('TikTok · CON · CPV · W4');
+
+    // DV360 with Online Video format resolves to 'DV360' across ALL, but narrows to 'YouTube' in '2026-01'
+    component.setPeriod('ALL');
+    component.setPlatform('DV360');
+    component.setFormat('Online Video');
+    fixture.detectChanges();
+    expect(component.individualModel().sampleSize).toBe(2);
+    expect(component.resolvedIndividualTargetPlatform()).toBe('DV360');
+
+    component.setPeriod('2026-01');
+    fixture.detectChanges();
+    expect(component.individualModel().sampleSize).toBe(1);
+    expect(component.resolvedIndividualTargetPlatform()).toBe('YouTube');
+  });
+
+  it('filters Mix Cross-Channel evaluations by selectedPeriod and resets period to ALL on country switch when unavailable', async () => {
+    reachCurveService.records.set([
+      // Colombia 2025-12: Meta CPM + Display CPM
+      makeRecord({
+        campana_nombre: 'CO_Mix_Meta_Dec_1',
+        pais: 'Colombia',
+        periodo: '2025-12',
+        plataforma: 'Meta',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        inversion: 3_000_000,
+        alcance: 900_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Mix_Meta_Dec_2',
+        pais: 'Colombia',
+        periodo: '2025-12',
+        plataforma: 'Meta',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        inversion: 6_000_000,
+        alcance: 1_500_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Mix_Disp_Dec_1',
+        pais: 'Colombia',
+        periodo: '2025-12',
+        plataforma: 'Display',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        inversion: 3_000_000,
+        alcance: 500_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Mix_Disp_Dec_2',
+        pais: 'Colombia',
+        periodo: '2025-12',
+        plataforma: 'Display',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        inversion: 6_000_000,
+        alcance: 850_000,
+      }),
+      // Colombia 2026-02: Meta CPM + YouTube CPV
+      makeRecord({
+        campana_nombre: 'CO_Mix_Meta_Feb_1',
+        pais: 'Colombia',
+        periodo: '2026-02',
+        plataforma: 'Meta',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        inversion: 4_000_000,
+        alcance: 1_100_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Mix_Meta_Feb_2',
+        pais: 'Colombia',
+        periodo: '2026-02',
+        plataforma: 'Meta',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        inversion: 8_000_000,
+        alcance: 1_900_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Mix_YT_Feb_1',
+        pais: 'Colombia',
+        periodo: '2026-02',
+        plataforma: 'YouTube',
+        tipo_compra: 'CPV',
+        corte: 'W4',
+        inversion: 4_000_000,
+        alcance: 800_000,
+      }),
+      makeRecord({
+        campana_nombre: 'CO_Mix_YT_Feb_2',
+        pais: 'Colombia',
+        periodo: '2026-02',
+        plataforma: 'YouTube',
+        tipo_compra: 'CPV',
+        corte: 'W4',
+        inversion: 8_000_000,
+        alcance: 1_400_000,
+      }),
+      // Mexico only has 2026-02 (no 2025-12!)
+      makeRecord({
+        campana_nombre: 'MX_Mix_Meta_Feb_1',
+        pais: 'Mexico',
+        periodo: '2026-02',
+        plataforma: 'Meta',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        moneda: 'MXN',
+        inversion: 40_000,
+        alcance: 1_000_000,
+      }),
+      makeRecord({
+        campana_nombre: 'MX_Mix_Meta_Feb_2',
+        pais: 'Mexico',
+        periodo: '2026-02',
+        plataforma: 'Meta',
+        tipo_compra: 'CPM',
+        corte: 'W4',
+        moneda: 'MXN',
+        inversion: 80_000,
+        alcance: 1_700_000,
+      }),
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.setSubMode('mix');
+    component.setMixRowBuyType('YouTube', 'CPV');
+    fixture.detectChanges();
+
+    // ALL => Meta (4), YouTube (2), Display (2) modeled
+    let evals = component.mixEvaluations();
+    expect(evals.find((e) => e.platform === 'Meta')?.model.sampleSize).toBe(4);
+    expect(evals.find((e) => e.platform === 'YouTube')?.availableBuyTypes).toEqual(['CPV']);
+    expect(evals.find((e) => e.platform === 'Display')?.availableBuyTypes).toEqual(['CPM']);
+    expect(component.mixSummary().activeModeledCount).toBe(3);
+
+    // Filter Mix by YEAR:2026 => Meta (2), YouTube (2), Display has no data
+    component.setPeriod('YEAR:2026');
+    fixture.detectChanges();
+    evals = component.mixEvaluations();
+    expect(evals.find((e) => e.platform === 'Meta')?.model.sampleSize).toBe(2);
+    expect(evals.find((e) => e.platform === 'YouTube')?.hasData).toBe(true);
+    expect(evals.find((e) => e.platform === 'Display')?.hasData).toBe(false);
+    expect(evals.find((e) => e.platform === 'Display')?.availableBuyTypes).toEqual([]);
+    expect(component.mixSummary().activeModeledCount).toBe(2);
+
+    // Filter Mix by 2026-02, then switch to Mexico (which HAS 2026-02) => period is preserved
+    component.setPeriod('2026-02');
+    fixture.detectChanges();
+    component.setCountry('Mexico');
+    fixture.detectChanges();
+    expect(component.selectedPeriod()).toBe('2026-02');
+
+    // Switch back to Colombia, pick 2025-12 (Display has data, YouTube does not)
+    component.setCountry('Colombia');
+    component.setPeriod('2025-12');
+    fixture.detectChanges();
+    evals = component.mixEvaluations();
+    expect(evals.find((e) => e.platform === 'Display')?.hasData).toBe(true);
+    expect(evals.find((e) => e.platform === 'YouTube')?.hasData).toBe(false);
+
+    // Switch to Mexico where '2025-12' is missing => selectedPeriod resets to 'ALL'
+    component.setCountry('Mexico');
+    fixture.detectChanges();
+    expect(component.selectedPeriod()).toBe('ALL');
+    expect(component.availablePeriodOptions()[0].label).toBe('Todo el histórico (1 mes)');
   });
 });

@@ -525,6 +525,114 @@ describe('ReachCurveService', () => {
         plataforma: 'Display',
       });
     });
+
+    it('enforces all 10 DV360 rules, word-boundary isolation for BUM/OLV, and strict precedence', () => {
+      // Rule 1: Bumper Ad (YBA or standalone BUM)
+      expect(service.classifyDv360Format('Camp_BUM_Test')).toEqual({
+        formato: 'Bumper Ad',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('Camp-BUM-Test')).toEqual({
+        formato: 'Bumper Ad',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('Camp BUM Test')).toEqual({
+        formato: 'Bumper Ad',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('BUM')).toEqual({
+        formato: 'Bumper Ad',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('IO_ALBUM_01')).toEqual({
+        formato: 'General',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('_BUM_YTSK_YTNSTV_DISPLAY')).toEqual({
+        formato: 'Bumper Ad',
+        plataforma: 'YouTube',
+      });
+
+      // Rule 2: YouTube Skippable (YTSK) before Rule 3/8
+      expect(service.classifyDv360Format('IO_YTSK_01')).toEqual({
+        formato: 'YouTube Skippable',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('YTSK_YTNSTV_DISPLAY')).toEqual({
+        formato: 'YouTube Skippable',
+        plataforma: 'YouTube',
+      });
+
+      // Rules 3-6: YTNSTV -> YTNS -> YTSTV -> DMG
+      expect(service.classifyDv360Format('YTNSTV_YTNS_YTSTV')).toEqual({
+        formato: 'Non-Skip Trueview',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('YTNS_YTSTV')).toEqual({
+        formato: 'Non-Skip',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('YTSTV_DMG')).toEqual({
+        formato: 'Skippable Trueview',
+        plataforma: 'YouTube',
+      });
+      expect(service.classifyDv360Format('Display_DMG_Test')).toEqual({
+        formato: 'Demand Gen',
+        plataforma: 'YouTube',
+      });
+
+      // Rule 7: Display-OLV / standalone OLV BEFORE Rule 8 (STDB|DISPLAY)
+      expect(service.classifyDv360Format('Display-OLV_Campaign')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('Display_OLV_01')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('Display OLV 01')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('DisplayOLV')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_OLV_01')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_VOLVO_01')).toEqual({
+        formato: 'General',
+        plataforma: 'Display',
+      });
+
+      // Rules 8-10: Standard Banners -> Handraisers -> Online Video fallback
+      expect(service.classifyDv360Format('IO_DISPLAY_Handraisers_Video')).toEqual({
+        formato: 'Standard Banners',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_IBD_01')).toEqual({
+        formato: 'Standard Banners',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_STD_01')).toEqual({
+        formato: 'Standard Banners',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_Handraisers_Video')).toEqual({
+        formato: 'Handraisers',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_Video_01')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+      expect(service.classifyDv360Format('IO_V_01')).toEqual({
+        formato: 'Online Video',
+        plataforma: 'Display',
+      });
+    });
   });
 
   describe('Currency conversion', () => {
@@ -954,6 +1062,270 @@ describe('ReachCurveService', () => {
       expect(crossReachService.getCountryUniverse('Peru')).toBe(18_500_000);
       expect(crossReachService.getCountryUniverse('Costa Rica')).toBe(3_500_000);
       expect(crossReachService.getCountryUniverse('Unknown')).toBe(0);
+    });
+  });
+
+  describe('Period filtering, regression periodo support, and periodOptions', () => {
+    it('evaluates matchesPeriodFilter for ALL, empty, YEAR:YYYY, and YYYY-MM', () => {
+      expect(service.matchesPeriodFilter('2026-01')).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', null)).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', undefined)).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', '')).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', '   ')).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', 'ALL')).toBe(true);
+      expect(service.matchesPeriodFilter('PENDING', 'ALL')).toBe(true);
+
+      expect(service.matchesPeriodFilter('2025-01', 'YEAR:2025')).toBe(true);
+      expect(service.matchesPeriodFilter('2025-12', 'YEAR:2025')).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', 'YEAR:2025')).toBe(false);
+      expect(service.matchesPeriodFilter('PENDING', 'YEAR:2025')).toBe(false);
+      expect(service.matchesPeriodFilter('2025-01', 'YEAR:')).toBe(false);
+      expect(service.matchesPeriodFilter('2025-01', 'YEAR:20')).toBe(false);
+
+      expect(service.matchesPeriodFilter('2026-01', '2026-01')).toBe(true);
+      expect(service.matchesPeriodFilter('2026-01', ' 2026-01 ')).toBe(true);
+      expect(service.matchesPeriodFilter('2026-02', '2026-01')).toBe(false);
+      expect(service.matchesPeriodFilter('PENDING', '2026-01')).toBe(false);
+    });
+
+    it('filters buildRegressionModel with ALL, YEAR:YYYY, and exact YYYY-MM periodo', async () => {
+      await service.upsertRecords([
+        makeRecord({
+          campana_nombre: 'C_2025_06',
+          periodo: '2025-06',
+          inversion: 4_200_000,
+          alcance: 100_000,
+        }),
+        makeRecord({
+          campana_nombre: 'C_2025_11',
+          periodo: '2025-11',
+          inversion: 8_400_000,
+          alcance: 200_000,
+        }),
+        makeRecord({
+          campana_nombre: 'C_2026_01',
+          periodo: '2026-01',
+          inversion: 12_600_000,
+          alcance: 300_000,
+        }),
+        makeRecord({
+          campana_nombre: 'C_2026_02',
+          periodo: '2026-02',
+          inversion: 16_800_000,
+          alcance: 400_000,
+        }),
+      ]);
+
+      const baseQuery = {
+        pais: 'Colombia' as const,
+        plataforma: 'Meta' as const,
+        stage: 'ATT' as const,
+        tipoCompra: 'CPM' as const,
+        corte: 'W1' as const,
+        currency: 'USD' as const,
+        modelType: 'linear' as const,
+      };
+
+      const allModel = service.buildRegressionModel({ ...baseQuery, periodo: 'ALL' });
+      expect(allModel.sampleSize).toBe(4);
+
+      const year2025Model = service.buildRegressionModel({ ...baseQuery, periodo: 'YEAR:2025' });
+      expect(year2025Model.sampleSize).toBe(2);
+      expect(year2025Model.historicalPoints.map((pt) => pt.periodo)).toEqual([
+        '2025-06',
+        '2025-11',
+      ]);
+
+      const jan2026Model = service.buildRegressionModel({ ...baseQuery, periodo: '2026-01' });
+      expect(jan2026Model.sampleSize).toBe(1);
+      expect(jan2026Model.historicalPoints[0].label).toBe('C_2026_01');
+      expect(jan2026Model.predictReach(3000)).toBeCloseTo(300_000, 2);
+
+      const missingModel = service.buildRegressionModel({ ...baseQuery, periodo: '2024-01' });
+      expect(missingModel.sampleSize).toBe(0);
+    });
+
+    it('filters getAvailableCombinations by optional periodo parameter', async () => {
+      await service.upsertRecords([
+        makeRecord({
+          campana_nombre: 'CO_2025_M1',
+          pais: 'Colombia',
+          plataforma: 'Meta',
+          stage: 'ATT',
+          tipo_compra: 'CPM',
+          corte: 'W1',
+          periodo: '2025-11',
+        }),
+        makeRecord({
+          campana_nombre: 'CO_2025_M2',
+          pais: 'Colombia',
+          plataforma: 'Meta',
+          stage: 'ATT',
+          tipo_compra: 'CPM',
+          corte: 'W1',
+          periodo: '2025-12',
+        }),
+        makeRecord({
+          campana_nombre: 'CO_2026_TT',
+          pais: 'Colombia',
+          plataforma: 'TikTok',
+          stage: 'CON',
+          tipo_compra: 'CPV',
+          corte: 'W2',
+          periodo: '2026-01',
+        }),
+        makeRecord({
+          campana_nombre: 'MX_2026_M',
+          pais: 'Mexico',
+          plataforma: 'Meta',
+          stage: 'ATT',
+          tipo_compra: 'CPM',
+          corte: 'W1',
+          periodo: '2026-01',
+        }),
+      ]);
+
+      expect(service.getAvailableCombinations('Colombia', 'ALL')).toEqual([
+        { plataforma: 'Meta', stage: 'ATT', tipoCompra: 'CPM', corte: 'W1', count: 2 },
+        { plataforma: 'TikTok', stage: 'CON', tipoCompra: 'CPV', corte: 'W2', count: 1 },
+      ]);
+      expect(service.getAvailableCombinations('Colombia', 'YEAR:2025')).toEqual([
+        { plataforma: 'Meta', stage: 'ATT', tipoCompra: 'CPM', corte: 'W1', count: 2 },
+      ]);
+      expect(service.getAvailableCombinations('Colombia', '2026-01')).toEqual([
+        { plataforma: 'TikTok', stage: 'CON', tipoCompra: 'CPV', corte: 'W2', count: 1 },
+      ]);
+      expect(service.getAvailableCombinations('Colombia', '2024-05')).toEqual([]);
+    });
+
+    it('builds getAvailablePeriodOptions(pais) and reactive periodOptions sorted descending', async () => {
+      expect(service.periodOptions()).toEqual([
+        {
+          value: 'ALL',
+          label: 'Todo el histórico (0 meses)',
+          kind: 'all',
+          count: 0,
+          monthCount: 0,
+        },
+      ]);
+
+      await service.upsertRecords([
+        makeRecord({ campana_nombre: 'CO_2025_11', pais: 'Colombia', periodo: '2025-11' }),
+        makeRecord({ campana_nombre: 'CO_2025_12_A', pais: 'Colombia', periodo: '2025-12' }),
+        makeRecord({ campana_nombre: 'CO_2025_12_B', pais: 'Colombia', periodo: '2025-12' }),
+        makeRecord({ campana_nombre: 'CO_2026_01', pais: 'Colombia', periodo: '2026-01' }),
+        makeRecord({ campana_nombre: 'CO_PENDING', pais: 'Colombia', periodo: 'PENDING' }),
+        makeRecord({
+          campana_nombre: 'CO_ZERO_INV',
+          pais: 'Colombia',
+          periodo: '2026-02',
+          inversion: 0,
+        }),
+        makeRecord({
+          campana_nombre: 'CO_ZERO_REACH',
+          pais: 'Colombia',
+          periodo: '2026-03',
+          alcance: 0,
+        }),
+        makeRecord({ campana_nombre: 'MX_2026_03', pais: 'Mexico', periodo: '2026-03' }),
+      ]);
+
+      expect(service.getAvailablePeriodOptions('Colombia')).toEqual([
+        {
+          value: 'ALL',
+          label: 'Todo el histórico (3 meses)',
+          kind: 'all',
+          count: 4,
+          monthCount: 3,
+        },
+        {
+          value: 'YEAR:2026',
+          label: 'Año 2026',
+          kind: 'year',
+          count: 1,
+          monthCount: 1,
+        },
+        {
+          value: 'YEAR:2025',
+          label: 'Año 2025',
+          kind: 'year',
+          count: 3,
+          monthCount: 2,
+        },
+        {
+          value: '2026-01',
+          label: 'Enero 2026',
+          kind: 'month',
+          count: 1,
+          monthCount: 1,
+        },
+        {
+          value: '2025-12',
+          label: 'Diciembre 2025',
+          kind: 'month',
+          count: 2,
+          monthCount: 1,
+        },
+        {
+          value: '2025-11',
+          label: 'Noviembre 2025',
+          kind: 'month',
+          count: 1,
+          monthCount: 1,
+        },
+      ]);
+
+      expect(service.getAvailablePeriodOptions('Mexico')).toEqual([
+        {
+          value: 'ALL',
+          label: 'Todo el histórico (1 mes)',
+          kind: 'all',
+          count: 1,
+          monthCount: 1,
+        },
+        {
+          value: 'YEAR:2026',
+          label: 'Año 2026',
+          kind: 'year',
+          count: 1,
+          monthCount: 1,
+        },
+        {
+          value: '2026-03',
+          label: 'Marzo 2026',
+          kind: 'month',
+          count: 1,
+          monthCount: 1,
+        },
+      ]);
+
+      expect(service.getAvailablePeriodOptions('Chile')).toEqual([
+        {
+          value: 'ALL',
+          label: 'Todo el histórico (0 meses)',
+          kind: 'all',
+          count: 0,
+          monthCount: 0,
+        },
+      ]);
+
+      expect(service.periodOptions()).toEqual(service.getAvailablePeriodOptions('ALL'));
+      expect(service.periodOptions()[0]).toEqual({
+        value: 'ALL',
+        label: 'Todo el histórico (4 meses)',
+        kind: 'all',
+        count: 5,
+        monthCount: 4,
+      });
+      expect(service.periodOptions().map((opt) => opt.value)).toEqual([
+        'ALL',
+        'YEAR:2026',
+        'YEAR:2025',
+        '2026-03',
+        '2026-01',
+        '2025-12',
+        '2025-11',
+      ]);
     });
   });
 
