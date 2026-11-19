@@ -1,0 +1,465 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="handleClose()">
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="header-left">
+          <div class="header-icon">
+            <hugeicons-icon
+              [icon]="CloudUploadIcon"
+              [size]="20"
+              [strokeWidth]="2"
+              color="#4f46e5"
+            ></hugeicons-icon>
+          </div>
+          <div>
+            <h2 id="import-modal-title" class="modal-title">Importar Reportes de Campañas</h2>
+            <p class="modal-subtitle">
+              Carga archivos Excel multi-plataforma para alimentar las curvas históricas en la nube
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="handleClose()"
+          [disabled]="isSaving()"
+          aria-label="Cerrar modal"
+        >
+          <hugeicons-icon [icon]="Cancel01Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <!-- Paso 1: Selector Obligatorio de Plataforma -->
+        <section class="modal-section" aria-labelledby="step-1-heading">
+          <div class="section-heading">
+            <span class="step-pill">Paso 1</span>
+            <h3 id="step-1-heading" class="section-title">
+              Selecciona la plataforma de origen <span class="required">*</span>
+            </h3>
+          </div>
+
+          <div class="platform-cards-grid">
+            @for (option of platformOptions; track option.id) {
+              <button
+                type="button"
+                class="platform-option-card"
+                [class.is-selected]="selectedPlatform() === option.id"
+                [disabled]="isParsing() || isSaving()"
+                [attr.aria-pressed]="selectedPlatform() === option.id"
+                (click)="selectPlatform(option.id)"
+              >
+                <div class="platform-card-top">
+                  <div class="platform-identity">
+                    <div class="platform-logo-box">
+                      <app-platform-icon [platformName]="option.id"></app-platform-icon>
+                    </div>
+                    <div class="platform-text">
+                      <span class="platform-name">{{ option.label }}</span>
+                      <span class="platform-subtitle">{{ option.subtitle }}</span>
+                    </div>
+                  </div>
+                  @if (selectedPlatform() === option.id) {
+                    <span class="selected-check" aria-hidden="true">
+                      <hugeicons-icon
+                        [icon]="Tick02Icon"
+                        [size]="14"
+                        [strokeWidth]="2.5"
+                      ></hugeicons-icon>
+                    </span>
+                  }
+                </div>
+                <p class="platform-legend">{{ option.columnsLegend }}</p>
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- Paso 2: Zona Drag & Drop Multi-Archivo -->
+        <section class="modal-section" aria-labelledby="step-2-heading">
+          <div class="section-heading">
+            <span class="step-pill">Paso 2</span>
+            <h3 id="step-2-heading" class="section-title">
+              Carga de archivos Excel (.xlsx / .xls)
+            </h3>
+          </div>
+
+          @if (!selectedPlatform()) {
+            <div class="lock-notice" role="status">
+              <hugeicons-icon [icon]="Alert02Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+              <span>
+                Selecciona primero la plataforma a la que pertenecen los archivos antes de subirlos
+              </span>
+            </div>
+          }
+
+          <div
+            class="dropzone"
+            [class.dropzone--locked]="!selectedPlatform()"
+            [class.dropzone--active]="isDragOver() && !!selectedPlatform() && !isParsing()"
+            [class.dropzone--parsing]="isParsing()"
+            [attr.aria-disabled]="!selectedPlatform() || isParsing()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="triggerFileInput()"
+          >
+            <input
+              #fileInput
+              type="file"
+              accept=".xlsx,.xls"
+              multiple
+              class="file-input-hidden"
+              [disabled]="!selectedPlatform() || isParsing()"
+              (click)="$event.stopPropagation()"
+              (change)="onFileInputChange($event)"
+            />
+
+            @if (isParsing()) {
+              <div class="dropzone-state">
+                <span class="parsing-spinner" aria-hidden="true"></span>
+                <p class="dropzone-title">Analizando archivos Excel...</p>
+                <p class="dropzone-subtitle">
+                  Validando columnas, métricas de inversión y alcance para {{ selectedPlatform() }}
+                </p>
+              </div>
+            } @else {
+              <div class="dropzone-state">
+                <div class="dropzone-icon-wrap">
+                  <hugeicons-icon
+                    [icon]="Upload01Icon"
+                    [size]="22"
+                    [strokeWidth]="1.8"
+                  ></hugeicons-icon>
+                </div>
+                <p class="dropzone-title">
+                  @if (selectedPlatform()) {
+                    Arrastra y suelta tus reportes de {{ selectedPlatform() }} aquí
+                  } @else {
+                    Zona de carga bloqueada hasta seleccionar plataforma
+                  }
+                </p>
+                <p class="dropzone-subtitle">
+                  @if (selectedPlatform()) {
+                    Puedes subir múltiples archivos .xlsx o .xls simultáneamente
+                  } @else {
+                    Elige Meta, TikTok o DV360 en el Paso 1 para habilitar la carga
+                  }
+                </p>
+                <button
+                  type="button"
+                  class="btn-select-files"
+                  [disabled]="!selectedPlatform() || isParsing()"
+                  (click)="$event.stopPropagation(); triggerFileInput()"
+                >
+                  <hugeicons-icon
+                    [icon]="CloudUploadIcon"
+                    [size]="15"
+                    [strokeWidth]="2"
+                  ></hugeicons-icon>
+                  <span>Seleccionar Archivos</span>
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Paso 3: Tabla de Previsualización y Validación por Archivo -->
+        @if (queuedFiles().length > 0) {
+          <section class="modal-section" aria-labelledby="step-3-heading">
+            <div class="section-heading-row">
+              <div class="section-heading">
+                <span class="step-pill">Paso 3</span>
+                <h3 id="step-3-heading" class="section-title">
+                  Previsualización y validación de archivos ({{ queuedFiles().length }})
+                </h3>
+              </div>
+              <span class="records-ready-pill">
+                <hugeicons-icon
+                  [icon]="CheckmarkCircle02Icon"
+                  [size]="14"
+                  [strokeWidth]="2"
+                ></hugeicons-icon>
+                <span class="tabular"
+                  >{{ formatNumber(totalValidRecords()) }} campañas válidas</span
+                >
+              </span>
+            </div>
+
+            <div class="preview-table-wrapper">
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    <th>Archivo</th>
+                    <th>Periodo y Corte</th>
+                    <th class="col-num">Válidas</th>
+                    <th class="col-num">Omitidas</th>
+                    <th class="col-action">Quitar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of queuedFiles(); track item.summary.fileName) {
+                    <tr
+                      class="file-row"
+                      [class.file-row--error]="item.summary.errors.length > 0"
+                      [class.file-row--warning]="
+                        item.summary.errors.length === 0 && item.summary.needsManualPeriodOrCut
+                      "
+                    >
+                      <td>
+                        <div class="file-name-cell">
+                          <hugeicons-icon
+                            [icon]="File01Icon"
+                            [size]="16"
+                            [strokeWidth]="1.8"
+                          ></hugeicons-icon>
+                          <div class="file-name-meta">
+                            <span class="file-name-text" [title]="item.summary.fileName">
+                              {{ item.summary.fileName }}
+                            </span>
+                            <span class="file-platform-tag">{{
+                              item.summary.selectedPlatform
+                            }}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        @if (item.summary.errors.length > 0) {
+                          <span class="status-badge status-badge--error">
+                            <hugeicons-icon
+                              [icon]="Alert02Icon"
+                              [size]="13"
+                              [strokeWidth]="2"
+                            ></hugeicons-icon>
+                            <span>Error de estructura</span>
+                          </span>
+                        } @else if (item.requiresManualInput) {
+                          <div class="manual-period-controls">
+                            <div class="manual-inputs-row">
+                              <input
+                                type="month"
+                                class="manual-month-input"
+                                [ngModel]="item.manualPeriod"
+                                (ngModelChange)="
+                                  onManualPeriodChange(item.summary.fileName, $event)
+                                "
+                                [attr.aria-label]="'Periodo manual para ' + item.summary.fileName"
+                              />
+                              <select
+                                class="manual-cut-select"
+                                [ngModel]="item.manualCut"
+                                (ngModelChange)="onManualCutChange(item.summary.fileName, $event)"
+                                [attr.aria-label]="'Corte manual para ' + item.summary.fileName"
+                              >
+                                <option value="" disabled>Corte...</option>
+                                @for (cut of availableCuts; track cut) {
+                                  <option [value]="cut">{{ cut }}</option>
+                                }
+                              </select>
+                            </div>
+                            @if (item.summary.needsManualPeriodOrCut) {
+                              <span class="manual-hint manual-hint--pending">
+                                <hugeicons-icon
+                                  [icon]="Alert02Icon"
+                                  [size]="12"
+                                  [strokeWidth]="2"
+                                ></hugeicons-icon>
+                                <span>Asigna periodo (YYYY-MM) y corte (W1–W4)</span>
+                              </span>
+                            } @else {
+                              <span class="manual-hint manual-hint--ready">
+                                <hugeicons-icon
+                                  [icon]="CheckmarkCircle02Icon"
+                                  [size]="12"
+                                  [strokeWidth]="2"
+                                ></hugeicons-icon>
+                                <span class="tabular">
+                                  Asignado: {{ item.summary.detectedPeriod }} ·
+                                  {{ item.summary.detectedCut }}
+                                </span>
+                              </span>
+                            }
+                          </div>
+                        } @else if (item.summary.detectedPeriod && item.summary.detectedCut) {
+                          <div class="detected-period-badges">
+                            <span class="period-badge tabular">
+                              <hugeicons-icon
+                                [icon]="Calendar01Icon"
+                                [size]="12"
+                                [strokeWidth]="2"
+                              ></hugeicons-icon>
+                              <span>{{ item.summary.detectedPeriod }}</span>
+                            </span>
+                            <span class="cut-badge tabular">{{ item.summary.detectedCut }}</span>
+                          </div>
+                        } @else {
+                          <span class="status-badge status-badge--muted"
+                            >Sin registros válidos</span
+                          >
+                        }
+                      </td>
+
+                      <td class="col-num tabular">
+                        <span
+                          class="count-pill"
+                          [class.count-pill--valid]="item.summary.validRecordsCount > 0"
+                        >
+                          {{ formatNumber(item.summary.validRecordsCount) }}
+                        </span>
+                      </td>
+
+                      <td class="col-num tabular">
+                        <span class="skipped-count">{{
+                          formatNumber(item.summary.skippedRows)
+                        }}</span>
+                      </td>
+
+                      <td class="col-action">
+                        <button
+                          type="button"
+                          class="btn-remove-file"
+                          (click)="removeFile(item.summary.fileName)"
+                          [disabled]="isParsing() || isSaving()"
+                          [attr.aria-label]="'Eliminar ' + item.summary.fileName"
+                          title="Quitar archivo de la cola"
+                        >
+                          <hugeicons-icon
+                            [icon]="Delete02Icon"
+                            [size]="15"
+                            [strokeWidth]="1.8"
+                          ></hugeicons-icon>
+                        </button>
+                      </td>
+                    </tr>
+
+                    @if (item.summary.errors.length > 0) {
+                      <tr class="file-error-row">
+                        <td colspan="5">
+                          <div class="file-error-box" role="alert">
+                            <hugeicons-icon
+                              [icon]="Alert02Icon"
+                              [size]="15"
+                              [strokeWidth]="2"
+                            ></hugeicons-icon>
+                            <ul class="file-error-list">
+                              @for (err of item.summary.errors; track err) {
+                                <li>{{ err }}</li>
+                              }
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Resumen Compacto del Lote -->
+            <div class="batch-summary-card">
+              <div class="batch-summary-header">
+                <div class="batch-summary-title">
+                  <hugeicons-icon
+                    [icon]="Layers01Icon"
+                    [size]="16"
+                    [strokeWidth]="2"
+                    color="#4f46e5"
+                  ></hugeicons-icon>
+                  <span>Resumen del lote listo para sincronizar</span>
+                </div>
+                <span class="batch-total-value tabular">
+                  {{ formatNumber(totalValidRecords()) }} campañas válidas
+                </span>
+              </div>
+
+              @if (totalValidRecords() > 0) {
+                <div class="batch-breakdowns">
+                  <div class="breakdown-group">
+                    <span class="breakdown-label">Por País:</span>
+                    <div class="breakdown-badges">
+                      @for (entry of countryBreakdown(); track entry.country) {
+                        <span class="summary-badge summary-badge--country tabular">
+                          <span>{{ entry.country }}</span>
+                          <strong>{{ formatNumber(entry.count) }}</strong>
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="breakdown-group">
+                    <span class="breakdown-label">Por Stage:</span>
+                    <div class="breakdown-badges">
+                      @for (entry of stageBreakdown(); track entry.stage) {
+                        <span class="summary-badge summary-badge--stage tabular">
+                          <span>{{ entry.stage }}</span>
+                          <strong>{{ formatNumber(entry.count) }}</strong>
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        @if (errorMessage()) {
+          <div class="error-banner" role="alert">
+            <hugeicons-icon [icon]="Alert02Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <div class="footer-status-hint">
+          @if (hasPendingManualPeriodOrCut()) {
+            <span class="pending-warning">
+              <hugeicons-icon [icon]="Alert02Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+              <span>Completa el periodo y corte faltante antes de guardar</span>
+            </span>
+          } @else if (totalValidRecords() > 0) {
+            <span class="ready-hint tabular">
+              {{ formatNumber(totalValidRecords()) }} registros listos para actualizar en la nube
+            </span>
+          }
+        </div>
+
+        <div class="footer-actions">
+          <button type="button" class="btn-cancel" (click)="handleClose()" [disabled]="isSaving()">
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn-save-sync"
+            [disabled]="!canSave()"
+            (click)="saveAndSync()"
+          >
+            @if (isSaving()) {
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span>Guardando en la nube...</span>
+            } @else {
+              <hugeicons-icon
+                [icon]="CloudUploadIcon"
+                [size]="16"
+                [strokeWidth]="2"
+              ></hugeicons-icon>
+              <span>Guardar y Sincronizar en la Nube</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

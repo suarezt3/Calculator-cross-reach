@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CountryRow, PlatformReach, KpiSummary } from '../models/platform.models';
+import { CountryRow, PlatformReach, KpiSummary, DEFAULT_COUNTRY_UNIVERSES } from '../models/platform.models';
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +16,13 @@ export class CrossReachService {
   private readonly ALL_LATAM_COUNTRIES = ['Mexico', 'Colombia', 'Chile', 'Peru', 'Costa Rica'];
 
   constructor() { }
+
+  /**
+   * Retorna el universo oficial configurado para un país, o 0 si no existe
+   */
+  getCountryUniverse(country: string): number {
+    return DEFAULT_COUNTRY_UNIVERSES[country] ?? 0;
+  }
 
   /**
    * Calcula el Cross Reach usando el modelo de deduplicación probabilística iterativa

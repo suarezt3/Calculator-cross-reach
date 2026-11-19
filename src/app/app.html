@@ -25,57 +25,59 @@
           <span class="status-text">Motor Activo</span>
         </div>
 
-        <!-- Grupo 1: Gestión de Escenarios en la Nube -->
-        <div class="action-group" title="Gestión de Escenarios en la Nube">
-          <button
-            type="button"
-            (click)="openSaveModal()"
-            class="btn-topbar-save"
-            [disabled]="tableData().length === 0"
-            title="Guardar escenario actual en la nube con nombre personalizado"
-          >
-            <hugeicons-icon [icon]="FloppyDiskIcon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
-            <span>Guardar Escenario</span>
-          </button>
+        @if (activeView() === 'calculator') {
+          <!-- Grupo 1: Gestión de Escenarios en la Nube -->
+          <div class="action-group" title="Gestión de Escenarios en la Nube">
+            <button
+              type="button"
+              (click)="openSaveModal()"
+              class="btn-topbar-save"
+              [disabled]="tableData().length === 0"
+              title="Guardar escenario actual en la nube con nombre personalizado"
+            >
+              <hugeicons-icon [icon]="FloppyDiskIcon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+              <span>Guardar Escenario</span>
+            </button>
 
-          <button
-            type="button"
-            (click)="openDrawer()"
-            class="btn-topbar-scenarios"
-            title="Ver y recuperar escenarios guardados en la nube"
-          >
-            <hugeicons-icon [icon]="Folder01Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
-            <span>Escenarios</span>
-            <span class="topbar-badge">{{ scenarioService.scenariosCount() }}</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              (click)="openDrawer()"
+              class="btn-topbar-scenarios"
+              title="Ver y recuperar escenarios guardados en la nube"
+            >
+              <hugeicons-icon [icon]="Folder01Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+              <span>Escenarios</span>
+              <span class="topbar-badge">{{ scenarioService.scenariosCount() }}</span>
+            </button>
+          </div>
 
-        <div class="topbar-divider" aria-hidden="true"></div>
+          <div class="topbar-divider" aria-hidden="true"></div>
 
-        <!-- Grupo 2: Control de Datos y Demostración -->
-        <div class="action-group" title="Acciones de la Matriz Activa">
-          <button
-            type="button"
-            (click)="loadInitialDemoData()"
-            class="btn-topbar-secondary"
-            title="Cargar escenario multicountry con universos oficiales"
-          >
-            <hugeicons-icon [icon]="RefreshIcon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
-            <span>Cargar Demo</span>
-          </button>
+          <!-- Grupo 2: Control de Datos y Demostración -->
+          <div class="action-group" title="Acciones de la Matriz Activa">
+            <button
+              type="button"
+              (click)="loadInitialDemoData()"
+              class="btn-topbar-secondary"
+              title="Cargar escenario multicountry con universos oficiales"
+            >
+              <hugeicons-icon [icon]="RefreshIcon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+              <span>Cargar Demo</span>
+            </button>
 
-          <button
-            type="button"
-            (click)="handleResetTable()"
-            class="btn-topbar-danger"
-            title="Limpiar todos los datos de la matriz activa"
-          >
-            <hugeicons-icon [icon]="Delete02Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
-            <span>Restablecer</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              (click)="handleResetTable()"
+              class="btn-topbar-danger"
+              title="Limpiar todos los datos de la matriz activa"
+            >
+              <hugeicons-icon [icon]="Delete02Icon" [size]="16" [strokeWidth]="1.8"></hugeicons-icon>
+              <span>Restablecer</span>
+            </button>
+          </div>
 
-        <div class="topbar-divider" aria-hidden="true"></div>
+          <div class="topbar-divider" aria-hidden="true"></div>
+        }
 
         <!-- Grupo 3: Referencia y Ayuda -->
         <div class="action-group" title="Documentación y Fundamentos Técnicos">
@@ -91,27 +93,72 @@
         </div>
       </div>
     </div>
+
+    <!-- Barra de Navegación por Módulos -->
+    <div class="topbar-nav-row">
+      <nav class="topbar-nav-inner" aria-label="Módulos del estudio">
+        <div class="view-switcher" role="tablist" aria-label="Selector de módulo activo">
+          <button
+            type="button"
+            role="tab"
+            id="tab-calculator"
+            class="view-tab"
+            [class.active]="activeView() === 'calculator'"
+            [attr.aria-selected]="activeView() === 'calculator'"
+            (click)="setActiveView('calculator')"
+          >
+            <hugeicons-icon [icon]="CalculatorIcon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+            <span>Calculadora Cross Reach</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            id="tab-curves"
+            class="view-tab"
+            [class.active]="activeView() === 'curves'"
+            [attr.aria-selected]="activeView() === 'curves'"
+            (click)="setActiveView('curves')"
+          >
+            <hugeicons-icon [icon]="ChartLineData02Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+            <span>Curvas de Alcance</span>
+            @if (reachCurveService.records().length > 0) {
+              <span class="nav-count-badge" title="Registros históricos disponibles">
+                {{ reachCurveService.records().length }}
+              </span>
+            }
+          </button>
+        </div>
+      </nav>
+    </div>
   </header>
 
   <!-- Contenedor Principal -->
   <main class="app-main-content">
-    <!-- Ribbon de KPIs Ejecutivos -->
-    <app-kpi-summary [kpi]="kpiSummary()"></app-kpi-summary>
+    @if (activeView() === 'calculator') {
+      <!-- Ribbon de KPIs Ejecutivos -->
+      <app-kpi-summary [kpi]="kpiSummary()"></app-kpi-summary>
 
-    <!-- Formulario Workbench de Configuración -->
-    <app-platform-form
-      [usedCountries]="usedCountries()"
-      (addToTable)="handleAddToTable($event)"
-    ></app-platform-form>
+      <!-- Formulario Workbench de Configuración -->
+      <app-platform-form
+        [usedCountries]="usedCountries()"
+        (addToTable)="handleAddToTable($event)"
+      ></app-platform-form>
 
-    <!-- Tabla Analítica de Resultados -->
-    <app-results-table
-      [data]="displayData()"
-      (editRow)="handleEditRow($event)"
-      (deleteRow)="handleDeleteRow($event)"
-      (openReportModal)="openReportModal()"
-      (openSaveModal)="openSaveModal()"
-    ></app-results-table>
+      <!-- Tabla Analítica de Resultados -->
+      <app-results-table
+        [data]="displayData()"
+        (editRow)="handleEditRow($event)"
+        (deleteRow)="handleDeleteRow($event)"
+        (openReportModal)="openReportModal()"
+        (openSaveModal)="openSaveModal()"
+      ></app-results-table>
+    } @else {
+      <app-reach-curves-view
+        (notify)="showToast($event)"
+        (sendProjectionToMatrix)="handleProjectionToMatrix($event)"
+      ></app-reach-curves-view>
+    }
   </main>
 
   <!-- Footer Corporativo -->

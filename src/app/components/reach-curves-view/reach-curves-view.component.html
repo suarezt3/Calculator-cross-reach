@@ -1,0 +1,619 @@
+<section class="curves-view-shell">
+  <!-- 1. Encabezado de Acciones y Configurador de Tasas de Cambio (TRM) -->
+  <header class="curves-header-card">
+    <div class="header-top-row">
+      <div class="header-title-block">
+        <div class="header-icon-badge" aria-hidden="true">
+          <hugeicons-icon
+            [icon]="ChartLineData02Icon"
+            [size]="22"
+            [strokeWidth]="2"
+            color="#4f46e5"
+          ></hugeicons-icon>
+        </div>
+        <div>
+          <div class="header-title-line">
+            <h2 class="curves-title">Base Histórica de Curvas de Alcance</h2>
+            <span
+              class="sync-status-pill"
+              [class.is-local]="reachCurveService.lastSyncStatus() === 'local_only'"
+              [class.is-error]="reachCurveService.lastSyncStatus() === 'error'"
+            >
+              <span class="sync-dot" aria-hidden="true"></span>
+              <span>{{ syncStatusLabel() }}</span>
+            </span>
+          </div>
+          <p class="curves-subtitle">
+            Auditoría centralizada de campañas históricas para calibrar modelos de inversión y
+            alcance
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions-group">
+        <button
+          type="button"
+          class="btn-secondary-action"
+          (click)="refreshData()"
+          [disabled]="isRefreshing() || reachCurveService.isLoading()"
+          title="Recargar registros históricos y tasas de cambio desde la nube"
+        >
+          <hugeicons-icon
+            [icon]="RefreshIcon"
+            [size]="16"
+            [strokeWidth]="1.9"
+            [class.is-spinning]="isRefreshing() || reachCurveService.isLoading()"
+          ></hugeicons-icon>
+          <span>Actualizar Datos</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn-primary-action"
+          (click)="openImportModal()"
+          title="Subir reportes Excel de Meta, TikTok o DV360"
+        >
+          <hugeicons-icon [icon]="CloudUploadIcon" [size]="17" [strokeWidth]="2"></hugeicons-icon>
+          <span>Importar Reportes Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Configurador Compacto de Tasas de Cambio (TRM) -->
+    <div class="trm-panel">
+      <div class="trm-panel-heading">
+        <div class="trm-icon-wrap" aria-hidden="true">
+          <hugeicons-icon
+            [icon]="Exchange01Icon"
+            [size]="16"
+            [strokeWidth]="2"
+            color="#4338ca"
+          ></hugeicons-icon>
+        </div>
+        <div>
+          <span class="trm-panel-title">Tasas de Cambio</span>
+          <span class="trm-panel-desc">Conversión automática en tiempo real</span>
+        </div>
+      </div>
+
+      <div class="trm-controls-row">
+        <div class="trm-field">
+          <label for="trm-cop-usd" class="trm-label">
+            <span>TRM Casaca (COP → USD)</span>
+            <span class="trm-scope-tag">(CO, CL, PE, CR)</span>
+          </label>
+          <div class="trm-input-wrap">
+            <span class="trm-prefix">1 USD =</span>
+            <input
+              id="trm-cop-usd"
+              type="number"
+              min="0.01"
+              step="any"
+              class="trm-input tabular"
+              [ngModel]="copToUsdInput() > 0 ? copToUsdInput() : null"
+              (ngModelChange)="onCopRateChange($event)"
+              (keydown.enter)="saveExchangeRates()"
+              placeholder="4200"
+            />
+            <span class="trm-suffix">COP</span>
+          </div>
+        </div>
+
+        <div class="trm-field">
+          <label for="trm-mxn-usd" class="trm-label">
+            <span>TRM México (MXN → USD)</span>
+            <span class="trm-scope-tag">(MX)</span>
+          </label>
+          <div class="trm-input-wrap">
+            <span class="trm-prefix">1 USD =</span>
+            <input
+              id="trm-mxn-usd"
+              type="number"
+              min="0.01"
+              step="any"
+              class="trm-input tabular"
+              [ngModel]="mxnToUsdInput() > 0 ? mxnToUsdInput() : null"
+              (ngModelChange)="onMxnRateChange($event)"
+              (keydown.enter)="saveExchangeRates()"
+              placeholder="20"
+            />
+            <span class="trm-suffix">MXN</span>
+          </div>
+        </div>
+
+        <div class="trm-save-area">
+          <button
+            type="button"
+            class="btn-save-trm"
+            (click)="saveExchangeRates()"
+            [disabled]="reachCurveService.isSaving()"
+          >
+            <hugeicons-icon [icon]="FloppyDiskIcon" [size]="15" [strokeWidth]="2"></hugeicons-icon>
+            <span>{{ reachCurveService.isSaving() ? 'Guardando...' : 'Guardar Tasas' }}</span>
+          </button>
+
+          @if (rateSavedBanner()) {
+            <span class="trm-feedback success" role="status">
+              <hugeicons-icon [icon]="Tick02Icon" [size]="14" [strokeWidth]="2.2"></hugeicons-icon>
+              <span>Tasas guardadas</span>
+            </span>
+          }
+
+          @if (rateError()) {
+            <span class="trm-feedback error" role="alert">
+              <hugeicons-icon
+                [icon]="Cancel01Icon"
+                [size]="14"
+                [strokeWidth]="2.2"
+              ></hugeicons-icon>
+              <span>{{ rateError() }}</span>
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. Tarjetas de Cobertura de la Base Histórica (KPIs) -->
+  <div class="coverage-kpi-grid">
+    <!-- KPI 1: Total Campañas Históricas -->
+    <article class="kpi-card highlight-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Total Campañas Históricas</span>
+        <span class="kpi-badge primary-badge">
+          <hugeicons-icon [icon]="Analytics02Icon" [size]="12" [strokeWidth]="2"></hugeicons-icon>
+          <span>Base Activa</span>
+        </span>
+      </div>
+      <div class="kpi-value-container">
+        <span class="kpi-value tabular">{{ formatInteger(totalRecordsCount()) }}</span>
+        <span class="kpi-unit">{{ totalRecordsCount() === 1 ? 'campaña' : 'campañas' }}</span>
+      </div>
+      <div class="kpi-subtext">
+        <hugeicons-icon
+          [icon]="Layers01Icon"
+          [size]="14"
+          [strokeWidth]="1.9"
+          color="#4f46e5"
+        ></hugeicons-icon>
+        <span>{{ syncStatusLabel() }}</span>
+      </div>
+    </article>
+
+    <!-- KPI 2: Meses / Periodos Cubiertos -->
+    <article class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Meses / Periodos Cubiertos</span>
+        <span class="kpi-badge info-badge">
+          <hugeicons-icon [icon]="Calendar01Icon" [size]="12" [strokeWidth]="2"></hugeicons-icon>
+          <span>Cobertura Temporal</span>
+        </span>
+      </div>
+      <div class="kpi-value-container">
+        <span class="kpi-value tabular">{{ periodsCount() }}</span>
+        <span class="kpi-unit">{{
+          periodsCount() === 1 ? 'mes cubierto' : 'meses cubiertos'
+        }}</span>
+      </div>
+      <div class="kpi-subtext">
+        <hugeicons-icon
+          [icon]="Calendar01Icon"
+          [size]="14"
+          [strokeWidth]="1.9"
+          color="#0284c7"
+        ></hugeicons-icon>
+        <span class="tabular">{{ periodRangeLabel() }}</span>
+      </div>
+    </article>
+
+    <!-- KPI 3: Desglose por Plataforma -->
+    <article class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Desglose por Plataforma</span>
+        <span class="kpi-badge neutral-badge">Canales</span>
+      </div>
+      <div class="breakdown-badges-grid">
+        @for (item of platformBreakdown(); track item.platform) {
+          <div class="breakdown-pill" [class.has-count]="item.count > 0">
+            <span class="pill-platform-icon">
+              <app-platform-icon [platformName]="item.platform"></app-platform-icon>
+            </span>
+            <span class="pill-name">{{ item.platform }}</span>
+            <span class="pill-count tabular">{{ formatInteger(item.count) }}</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <!-- KPI 4: Desglose por Mercado -->
+    <article class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Desglose por Mercado</span>
+        <span class="kpi-badge success-badge">
+          <hugeicons-icon [icon]="Globe02Icon" [size]="12" [strokeWidth]="2"></hugeicons-icon>
+          <span>LATAM</span>
+        </span>
+      </div>
+      <div class="breakdown-badges-grid">
+        @for (item of countryBreakdown(); track item.country) {
+          <div class="breakdown-pill" [class.has-count]="item.count > 0">
+            <span class="pill-name">{{ item.country }}</span>
+            <span class="pill-count tabular">{{ formatInteger(item.count) }}</span>
+          </div>
+        }
+      </div>
+    </article>
+  </div>
+
+  <!-- 3. Navegación Interna del Módulo: Simulador de Curvas vs. Base Histórica -->
+  <div class="module-tabs-bar">
+    <div class="module-tabs-switcher" role="tablist" aria-label="Vistas de Curvas de Alcance">
+      <button
+        type="button"
+        role="tab"
+        id="curves-tab-simulator"
+        class="module-tab-btn"
+        [class.active]="activeTab() === 'simulator'"
+        [attr.aria-selected]="activeTab() === 'simulator'"
+        aria-controls="curves-panel-simulator"
+        (click)="setActiveTab('simulator')"
+      >
+        <hugeicons-icon [icon]="ChartLineData02Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        <span>Simulador de Curvas</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        id="curves-tab-audit"
+        class="module-tab-btn"
+        [class.active]="activeTab() === 'audit'"
+        [attr.aria-selected]="activeTab() === 'audit'"
+        aria-controls="curves-panel-audit"
+        (click)="setActiveTab('audit')"
+      >
+        <hugeicons-icon [icon]="Layers01Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        <span>Base Histórica y Auditoría</span>
+        @if (totalRecordsCount() > 0) {
+          <span class="module-tab-badge tabular">{{ formatInteger(totalRecordsCount()) }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. Contenido de la Pestaña Activa -->
+  @if (activeTab() === 'simulator') {
+    <div
+      id="curves-panel-simulator"
+      class="tab-panel-host"
+      role="tabpanel"
+      aria-labelledby="curves-tab-simulator"
+    >
+      <app-reach-curve-simulator
+        (sendProjectionToMatrix)="handleSendProjectionToMatrix($event)"
+      ></app-reach-curve-simulator>
+    </div>
+  } @else {
+    <!-- 4. Tabla de Auditoría de Registros Cargados -->
+    <section
+      id="curves-panel-audit"
+      class="audit-card"
+      role="tabpanel"
+      aria-labelledby="curves-tab-audit"
+    >
+      <div class="audit-toolbar">
+        <div class="audit-title-block">
+          <div class="audit-icon-badge" aria-hidden="true">
+            <hugeicons-icon
+              [icon]="FilterIcon"
+              [size]="18"
+              [strokeWidth]="2"
+              color="#4f46e5"
+            ></hugeicons-icon>
+          </div>
+          <div>
+            <h3 class="audit-title">Auditoría de Registros Históricos</h3>
+            <p class="audit-desc">
+              <span class="tabular">{{ formatInteger(filteredRecords().length) }}</span>
+              {{ filteredRecords().length === 1 ? 'registro filtrado' : 'registros filtrados' }}
+              de
+              <span class="tabular">{{ formatInteger(totalRecordsCount()) }}</span>
+              totales en base
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-clear-filters"
+          (click)="clearFilters()"
+          [disabled]="!hasActiveFilters()"
+        >
+          <hugeicons-icon [icon]="Cancel01Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+          <span>Limpiar filtros</span>
+        </button>
+      </div>
+
+      <!-- Barra de 7 Filtros Reactivos -->
+      <div class="filters-grid">
+        <div class="filter-field">
+          <label for="filter-country" class="filter-label">País</label>
+          <select
+            id="filter-country"
+            class="filter-select"
+            [ngModel]="filterCountry()"
+            (ngModelChange)="setCountryFilter($event)"
+          >
+            <option value="ALL">Todos los países</option>
+            @for (country of countries; track country) {
+              <option [value]="country">{{ country }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="filter-platform" class="filter-label">Plataforma</label>
+          <select
+            id="filter-platform"
+            class="filter-select"
+            [ngModel]="filterPlatform()"
+            (ngModelChange)="setPlatformFilter($event)"
+          >
+            <option value="ALL">Todas las plataformas</option>
+            @for (platform of platforms; track platform) {
+              <option [value]="platform">{{ platform }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="filter-period" class="filter-label">Periodo</label>
+          <select
+            id="filter-period"
+            class="filter-select"
+            [ngModel]="filterPeriod()"
+            (ngModelChange)="setPeriodFilter($event)"
+          >
+            <option value="ALL">Todos los periodos</option>
+            @for (period of availablePeriods(); track period) {
+              <option [value]="period">{{ period }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="filter-cut" class="filter-label">Corte</label>
+          <select
+            id="filter-cut"
+            class="filter-select"
+            [ngModel]="filterCut()"
+            (ngModelChange)="setCutFilter($event)"
+          >
+            <option value="ALL">Todos los cortes</option>
+            @for (cut of cuts; track cut) {
+              <option [value]="cut">{{ cut }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="filter-stage" class="filter-label">Stage</label>
+          <select
+            id="filter-stage"
+            class="filter-select"
+            [ngModel]="filterStage()"
+            (ngModelChange)="setStageFilter($event)"
+          >
+            <option value="ALL">Todos los stages</option>
+            @for (stage of stages; track stage) {
+              <option [value]="stage">{{ stage }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="filter-buy-type" class="filter-label">Tipo Compra</label>
+          <select
+            id="filter-buy-type"
+            class="filter-select"
+            [ngModel]="filterBuyType()"
+            (ngModelChange)="setBuyTypeFilter($event)"
+          >
+            <option value="ALL">Todos los tipos</option>
+            @for (buyType of buyTypes; track buyType) {
+              <option [value]="buyType">{{ buyType }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="filter-currency" class="filter-label">Moneda de Visualización</label>
+          <select
+            id="filter-currency"
+            class="filter-select filter-select-currency"
+            [ngModel]="displayCurrency()"
+            (ngModelChange)="setDisplayCurrency($event)"
+          >
+            <option value="LOCAL">Moneda Original (Local)</option>
+            <option value="COP">COP (Pesos Colombianos)</option>
+            <option value="MXN">MXN (Pesos Mexicanos)</option>
+            <option value="USD">USD (Dólares)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Estados de Carga, Vacío, Filtrado Vacío y Tabla -->
+      @if (reachCurveService.isLoading() && reachCurveService.records().length === 0) {
+        <div class="loading-skeleton" aria-busy="true" aria-label="Cargando base histórica">
+          @for (rowIndex of [1, 2, 3, 4, 5, 6]; track rowIndex) {
+            <div class="skeleton-row">
+              <span class="skeleton-cell w-sm"></span>
+              <span class="skeleton-cell w-xs"></span>
+              <span class="skeleton-cell w-md"></span>
+              <span class="skeleton-cell w-sm"></span>
+              <span class="skeleton-cell w-lg"></span>
+              <span class="skeleton-cell w-md"></span>
+              <span class="skeleton-cell w-sm"></span>
+            </div>
+          }
+        </div>
+      } @else if (reachCurveService.records().length === 0) {
+        <div class="empty-state-box">
+          <div class="empty-icon-circle">
+            <hugeicons-icon
+              [icon]="Layers01Icon"
+              [size]="28"
+              [strokeWidth]="1.8"
+              color="#4f46e5"
+            ></hugeicons-icon>
+          </div>
+          <h4 class="empty-title">No hay campañas históricas cargadas todavía</h4>
+          <p class="empty-desc">
+            Importa tus reportes Excel de Meta, TikTok o DV360 para comenzar a construir la base de
+            conocimiento de Curvas de Alcance.
+          </p>
+          <button type="button" class="btn-primary-action" (click)="openImportModal()">
+            <hugeicons-icon [icon]="CloudUploadIcon" [size]="17" [strokeWidth]="2"></hugeicons-icon>
+            <span>Importar Reportes Excel</span>
+          </button>
+        </div>
+      } @else if (filteredRecords().length === 0) {
+        <div class="empty-state-box is-filtered">
+          <div class="empty-icon-circle is-neutral">
+            <hugeicons-icon
+              [icon]="FilterIcon"
+              [size]="26"
+              [strokeWidth]="1.8"
+              color="#64748b"
+            ></hugeicons-icon>
+          </div>
+          <h4 class="empty-title">Sin coincidencias para los filtros seleccionados</h4>
+          <p class="empty-desc">
+            Ninguna campaña cumple con la combinación actual de filtros. Ajusta los criterios o
+            limpia los filtros para ver toda la base.
+          </p>
+          <button type="button" class="btn-secondary-action" (click)="clearFilters()">
+            <hugeicons-icon [icon]="Cancel01Icon" [size]="15" [strokeWidth]="2"></hugeicons-icon>
+            <span>Limpiar filtros</span>
+          </button>
+        </div>
+      } @else {
+        <div class="table-responsive-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th>Corte</th>
+                <th>Plataforma / Formato</th>
+                <th>País</th>
+                <th>Stage</th>
+                <th>Tipo Compra</th>
+                <th>Campaña</th>
+                <th class="col-numeric">Inversión</th>
+                <th class="col-numeric">Alcance</th>
+                <th class="col-numeric">Impresiones</th>
+                <th class="col-numeric">Frecuencia</th>
+                <th class="col-numeric">CPMa</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of paginatedRows(); track row.record.record_key + '::' + $index) {
+                <tr class="audit-row">
+                  <td class="tabular col-period">{{ row.record.periodo }}</td>
+                  <td>
+                    <span class="cut-badge">{{ row.record.corte }}</span>
+                  </td>
+                  <td>
+                    <div class="platform-format-cell">
+                      <span class="table-platform-icon">
+                        <app-platform-icon
+                          [platformName]="row.record.plataforma"
+                        ></app-platform-icon>
+                      </span>
+                      <div class="platform-format-text">
+                        <span class="platform-name">{{ row.record.plataforma }}</span>
+                        <span class="format-sublabel">{{ row.record.formato || 'General' }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="col-country">{{ row.record.pais }}</td>
+                  <td>
+                    <span [class]="getStageBadgeClass(row.record.stage)">
+                      {{ row.record.stage }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="buy-type-badge">{{ row.record.tipo_compra }}</span>
+                  </td>
+                  <td class="col-campaign">
+                    <span class="campaign-name-truncate" [title]="row.record.campana_nombre">
+                      {{ row.record.campana_nombre }}
+                    </span>
+                  </td>
+                  <td class="col-numeric tabular investment-cell">
+                    {{ formatCurrency(row.displayInvestment, row.currencyCode) }}
+                  </td>
+                  <td class="col-numeric tabular">{{ formatInteger(row.record.alcance) }}</td>
+                  <td class="col-numeric tabular">{{ formatInteger(row.record.impresiones) }}</td>
+                  <td class="col-numeric tabular frequency-cell">{{ row.frequency }}</td>
+                  <td class="col-numeric tabular cpma-cell">
+                    {{ formatCurrency(row.displayCpma, row.currencyCode, true) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="pagination-bar">
+          <span class="pagination-summary tabular">
+            Mostrando {{ pageStartIndex() }}–{{ pageEndIndex() }} de
+            {{ formatInteger(filteredRecords().length) }} registros
+          </span>
+
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="btn-page"
+              (click)="goToPreviousPage()"
+              [disabled]="safeCurrentPage() <= 1"
+            >
+              <hugeicons-icon
+                [icon]="ArrowLeft01Icon"
+                [size]="15"
+                [strokeWidth]="2"
+              ></hugeicons-icon>
+              <span>Anterior</span>
+            </button>
+
+            <span class="page-indicator tabular">
+              Página {{ safeCurrentPage() }} de {{ totalPages() }}
+            </span>
+
+            <button
+              type="button"
+              class="btn-page"
+              (click)="goToNextPage()"
+              [disabled]="safeCurrentPage() >= totalPages()"
+            >
+              <span>Siguiente</span>
+              <hugeicons-icon
+                [icon]="ArrowRight01Icon"
+                [size]="15"
+                [strokeWidth]="2"
+              ></hugeicons-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Modal de Importación de Reportes Excel -->
+  <app-reach-curve-import-modal
+    [isOpen]="showImportModal()"
+    (closeModal)="closeImportModal()"
+    (importCompleted)="handleImportCompleted($event)"
+  ></app-reach-curve-import-modal>
+</section>

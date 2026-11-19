@@ -1,0 +1,757 @@
+<section class="simulator-shell" aria-label="Simulador de Curvas de Alcance">
+  <!-- 1. Selector Superior de Sub-Modo -->
+  <header class="simulator-topbar">
+    <div class="simulator-heading">
+      <div class="heading-icon-wrap" aria-hidden="true">
+        <hugeicons-icon
+          [icon]="ChartLineData02Icon"
+          [size]="20"
+          [strokeWidth]="2"
+          color="#4f46e5"
+        ></hugeicons-icon>
+      </div>
+      <div>
+        <h3 class="simulator-title">Simulador Predictivo de Alcance e Inversión</h3>
+        <p class="simulator-subtitle">
+          Modelado econométrico sobre histórico real y proyección Cross-Channel deduplicada
+        </p>
+      </div>
+    </div>
+
+    <div class="submode-segmented" role="tablist" aria-label="Modo de simulación">
+      <button
+        type="button"
+        role="tab"
+        class="submode-btn"
+        [class.is-active]="activeSubMode() === 'individual'"
+        [attr.aria-selected]="activeSubMode() === 'individual'"
+        (click)="setSubMode('individual')"
+      >
+        <hugeicons-icon [icon]="ChartLineData02Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        <span>Curva Individual y Escenarios</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="submode-btn"
+        [class.is-active]="activeSubMode() === 'mix'"
+        [attr.aria-selected]="activeSubMode() === 'mix'"
+        (click)="setSubMode('mix')"
+      >
+        <hugeicons-icon [icon]="ChartBarLineIcon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        <span>Mix Cross-Channel (Multi-Plataforma)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- A. Barra Global de Configuración del Modelo -->
+  <section class="global-config-card" aria-label="Configuración Global del Modelo">
+    <div class="config-grid">
+      <!-- País + Universo Oficial -->
+      <div class="config-field">
+        <label for="sim-country" class="config-label">
+          <hugeicons-icon [icon]="Globe02Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+          <span>País</span>
+        </label>
+        <select
+          id="sim-country"
+          class="config-select"
+          [ngModel]="selectedCountry()"
+          (ngModelChange)="setCountry($event)"
+        >
+          @for (country of countries; track country) {
+            <option [value]="country">{{ country }}</option>
+          }
+        </select>
+        <span class="universe-caption tabular">
+          Universo oficial: <strong>{{ formatInteger(countryUniverse()) }}</strong> personas
+        </span>
+      </div>
+
+      <!-- Stage -->
+      <div class="config-field">
+        <span class="config-label">
+          <hugeicons-icon [icon]="Analytics02Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+          <span>Stage</span>
+        </span>
+        <div class="pill-group" role="group" aria-label="Stage de campaña">
+          @for (stage of stages; track stage.value) {
+            <button
+              type="button"
+              class="pill-btn"
+              [class.is-active]="selectedStage() === stage.value"
+              [title]="stage.label"
+              (click)="setStage(stage.value)"
+            >
+              {{ stage.value }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Corte Temporal -->
+      <div class="config-field">
+        <span class="config-label">
+          <hugeicons-icon [icon]="Calendar01Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+          <span>Corte Temporal</span>
+        </span>
+        <div class="pill-group" role="group" aria-label="Corte temporal">
+          @for (cut of cuts; track cut.value) {
+            <button
+              type="button"
+              class="pill-btn"
+              [class.is-active]="selectedCut() === cut.value"
+              (click)="setCut(cut.value)"
+            >
+              <span>{{ cut.label }}</span>
+              <span class="pill-subdetail">{{ cut.detail }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Modelo Matemático -->
+      <div class="config-field">
+        <span class="config-label">
+          <hugeicons-icon
+            [icon]="SlidersHorizontalIcon"
+            [size]="14"
+            [strokeWidth]="2"
+          ></hugeicons-icon>
+          <span>Modelo Matemático</span>
+        </span>
+        <div class="toggle-group" role="group" aria-label="Modelo matemático">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.is-active]="modelType() === 'logarithmic'"
+            (click)="setModelType('logarithmic')"
+          >
+            Curva Logarítmica (Saturación)
+          </button>
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.is-active]="modelType() === 'linear'"
+            (click)="setModelType('linear')"
+          >
+            Regresión Lineal
+          </button>
+        </div>
+      </div>
+
+      <!-- Moneda de Simulación -->
+      <div class="config-field">
+        <span class="config-label">
+          <hugeicons-icon [icon]="Exchange01Icon" [size]="14" [strokeWidth]="2"></hugeicons-icon>
+          <span>Moneda de Simulación</span>
+        </span>
+        <div class="toggle-group" role="group" aria-label="Moneda de simulación">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.is-active]="currencyMode() === 'LOCAL'"
+            (click)="setCurrencyMode('LOCAL')"
+          >
+            Moneda Local ({{ localCurrencyCode() }})
+          </button>
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.is-active]="currencyMode() === 'USD'"
+            (click)="setCurrencyMode('USD')"
+          >
+            USD (Dólares)
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B. Sub-Modo 1: Curva Individual y Escenarios -->
+  @if (activeSubMode() === 'individual') {
+    <div class="individual-layout">
+      <!-- Selectores de Canal e Inversión -->
+      <section class="channel-controls-card" aria-label="Parámetros de canal e inversión">
+        <div class="channel-selectors-grid">
+          <!-- Plataforma -->
+          <div class="selector-block">
+            <span class="selector-label">Plataforma</span>
+            <div class="platform-pills-row" role="group" aria-label="Plataforma">
+              @for (platform of individualPlatforms; track platform) {
+                <button
+                  type="button"
+                  class="platform-pill-btn"
+                  [class.is-active]="selectedPlatform() === platform"
+                  (click)="setPlatform(platform)"
+                >
+                  <span class="platform-pill-icon">
+                    <app-platform-icon [platformName]="platform"></app-platform-icon>
+                  </span>
+                  <span>{{ platform }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Tipo de Compra -->
+          <div class="selector-block">
+            <span class="selector-label">
+              Tipo de Compra
+              <span class="selector-hint">(resaltado = datos históricos disponibles)</span>
+            </span>
+            <div class="buytype-pills-row" role="group" aria-label="Tipo de compra">
+              @for (item of buyTypeAvailability(); track item.buyType) {
+                <button
+                  type="button"
+                  class="buytype-pill-btn"
+                  [class.is-active]="selectedBuyType() === item.buyType"
+                  [class.has-data]="item.hasData"
+                  [class.no-data]="!item.hasData"
+                  (click)="setBuyType(item.buyType)"
+                >
+                  @if (item.hasData) {
+                    <span class="availability-dot" aria-hidden="true"></span>
+                  }
+                  <span>{{ item.buyType }}</span>
+                  @if (item.hasData) {
+                    <span class="buytype-count tabular">{{ item.count }}</span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Formato (opcional para YouTube, Display y DV360) -->
+          @if (showFormatSelector()) {
+            <div class="selector-block format-block">
+              <label for="sim-format" class="selector-label">Formato</label>
+              <select
+                id="sim-format"
+                class="config-select"
+                [ngModel]="selectedFormat()"
+                (ngModelChange)="setFormat($event)"
+              >
+                <option value="ALL">Todos los formatos</option>
+                @for (fmt of availableFormats(); track fmt) {
+                  <option [value]="fmt">{{ fmt }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+
+        <!-- Control Interactivo de Inversión -->
+        <div class="budget-control-box">
+          <div class="budget-header-row">
+            <label for="sim-budget-input" class="budget-title">
+              Inversión a Simular ({{ activeCurrency() }})
+            </label>
+            <div class="budget-input-group">
+              <span class="currency-prefix">{{ activeCurrency() }}</span>
+              <input
+                id="sim-budget-input"
+                type="number"
+                min="0"
+                step="any"
+                class="budget-number-input tabular"
+                [ngModel]="individualBudget()"
+                (ngModelChange)="onIndividualBudgetChange($event)"
+              />
+            </div>
+          </div>
+
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              aria-label="Deslizador de inversión a simular"
+              class="budget-range-slider"
+              min="0"
+              [max]="sliderMax()"
+              [step]="sliderStep()"
+              [ngModel]="individualBudget()"
+              (ngModelChange)="onIndividualSliderChange($event)"
+            />
+            <div class="slider-scale-labels tabular">
+              <span>{{ formatCompactCurrency(0) }}</span>
+              <span>{{ formatCompactCurrency(sliderMax() / 2) }}</span>
+              <span>{{ formatCompactCurrency(sliderMax()) }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Estado Vacío Inteligente cuando sampleSize === 0 -->
+      @if (individualModel().sampleSize === 0) {
+        <section class="smart-empty-card" aria-label="Sin historial para la combinación actual">
+          <div class="empty-header-row">
+            <div class="empty-badge-icon" aria-hidden="true">
+              <hugeicons-icon
+                [icon]="Alert02Icon"
+                [size]="24"
+                [strokeWidth]="2"
+                color="#d97706"
+              ></hugeicons-icon>
+            </div>
+            <div>
+              <h4 class="empty-card-title">
+                Sin campañas históricas para {{ selectedPlatform() }} · {{ selectedStage() }} ·
+                {{ selectedBuyType() }} · {{ selectedCut() }} en {{ selectedCountry() }}
+              </h4>
+              <p class="empty-card-desc">
+                El modelo requiere al menos una campaña histórica válida en esta combinación para
+                proyectar la curva de alcance.
+              </p>
+            </div>
+          </div>
+
+          @if (availableCombinations().length > 0) {
+            <div class="suggestions-box">
+              <span class="suggestions-label">
+                <hugeicons-icon
+                  [icon]="SparklesIcon"
+                  [size]="14"
+                  [strokeWidth]="2"
+                  color="#4f46e5"
+                ></hugeicons-icon>
+                <span
+                  >Combinaciones con datos disponibles en {{ selectedCountry() }} (clic para
+                  cargar):</span
+                >
+              </span>
+              <div class="combination-chips-grid">
+                @for (
+                  combo of availableCombinations();
+                  track combo.plataforma +
+                    '|' +
+                    combo.stage +
+                    '|' +
+                    combo.tipoCompra +
+                    '|' +
+                    combo.corte
+                ) {
+                  <button
+                    type="button"
+                    class="combo-chip-btn"
+                    (click)="applyAvailableCombination(combo)"
+                  >
+                    <span class="chip-platform-icon">
+                      <app-platform-icon [platformName]="combo.plataforma"></app-platform-icon>
+                    </span>
+                    <span class="chip-text">
+                      {{ combo.plataforma }} · {{ combo.stage }} · {{ combo.tipoCompra }} ·
+                      {{ combo.corte }}
+                    </span>
+                    <span class="chip-count tabular">{{ combo.count }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          } @else {
+            <p class="no-country-data-note">
+              Todavía no hay campañas cargadas para <strong>{{ selectedCountry() }}</strong>. Cambia
+              de país o importa reportes Excel desde la pestaña
+              <strong>Base Histórica y Auditoría</strong>.
+            </p>
+          }
+        </section>
+      } @else {
+        <!-- Tarjetas de Resultados Proyectados y Diagnóstico Estadístico -->
+        <div class="results-kpi-grid">
+          <!-- Alcance Proyectado + Penetración -->
+          <article class="result-card is-primary">
+            <div class="result-card-top">
+              <span class="result-label">Alcance Proyectado</span>
+              <span class="penetration-pill tabular">
+                {{ projectedPenetrationPct().toFixed(2) }}% del universo
+              </span>
+            </div>
+            <div class="result-main-value tabular">{{ formatInteger(projectedReach()) }}</div>
+            <div class="penetration-track" aria-hidden="true">
+              <div class="penetration-fill" [style.width.%]="projectedPenetrationPct()"></div>
+            </div>
+            <div class="result-footnote tabular">
+              Sobre {{ formatInteger(countryUniverse()) }} personas en {{ selectedCountry() }}
+            </div>
+          </article>
+
+          <!-- CPMa Proyectado -->
+          <article class="result-card">
+            <div class="result-card-top">
+              <span class="result-label">CPMa Proyectado</span>
+              <span class="currency-tag">{{ activeCurrency() }}</span>
+            </div>
+            <div class="result-main-value tabular">
+              {{ formatCurrency(projectedCpma(), activeCurrency(), true) }}
+            </div>
+            <div class="result-footnote tabular">
+              Costo por cada mil personas alcanzadas con
+              {{ formatCurrency(individualBudget(), activeCurrency()) }}
+            </div>
+          </article>
+
+          <!-- Confiabilidad del Modelo (R²) -->
+          <article class="result-card">
+            <div class="result-card-top">
+              <span class="result-label">Confiabilidad del Modelo (R²)</span>
+              <span
+                class="r2-badge tabular"
+                [class.is-high]="rSquaredLevel() === 'high'"
+                [class.is-medium]="rSquaredLevel() === 'medium'"
+                [class.is-low]="rSquaredLevel() === 'low'"
+              >
+                @if (rSquaredLevel() === 'high') {
+                  <hugeicons-icon
+                    [icon]="CheckmarkCircle02Icon"
+                    [size]="13"
+                    [strokeWidth]="2.2"
+                  ></hugeicons-icon>
+                } @else {
+                  <hugeicons-icon
+                    [icon]="Alert02Icon"
+                    [size]="13"
+                    [strokeWidth]="2.2"
+                  ></hugeicons-icon>
+                }
+                <span>{{ rSquaredStatusLabel() }}</span>
+              </span>
+            </div>
+            <div class="result-main-value tabular">{{ rSquaredPercent().toFixed(1) }}%</div>
+            <div class="result-footnote equation-line tabular">
+              <span class="sample-pill">n = {{ individualModel().sampleSize }} campañas</span>
+              <span class="equation-text">{{ individualModel().equationText }}</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Gráfico Interactivo ECharts -->
+        <section class="chart-card" aria-label="Gráfico de curva de alcance">
+          <div class="chart-header-row">
+            <div>
+              <h4 class="chart-title">
+                Curva de Alcance: {{ selectedPlatform() }} · {{ selectedStage() }} ·
+                {{ selectedBuyType() }} ({{ selectedCut() }})
+              </h4>
+              <p class="chart-subtitle">
+                Línea predictiva vs. campañas históricas reales y punto simulado actual
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn-outline-action"
+              (click)="downloadIndividualChartPng()"
+              [disabled]="individualModel().sampleSize === 0"
+            >
+              <hugeicons-icon
+                [icon]="Download01Icon"
+                [size]="15"
+                [strokeWidth]="2"
+              ></hugeicons-icon>
+              <span>Descargar PNG</span>
+            </button>
+          </div>
+
+          <div #individualChart class="echarts-canvas-box"></div>
+        </section>
+
+        <!-- Tabla de Sensibilidad / Escenarios de Presupuesto -->
+        <section class="scenarios-card" aria-label="Tabla de sensibilidad de presupuesto">
+          <div class="scenarios-header-row">
+            <div>
+              <h4 class="chart-title">Tabla de Sensibilidad y Escenarios de Presupuesto</h4>
+              <p class="chart-subtitle">
+                Comparativa marginal alrededor del presupuesto base en {{ activeCurrency() }}
+              </p>
+            </div>
+            <div class="scenarios-actions-group">
+              <button type="button" class="btn-outline-action" (click)="copySensitivityTable()">
+                <hugeicons-icon
+                  [icon]="tableCopiedFeedback() ? Tick02Icon : Copy01Icon"
+                  [size]="15"
+                  [strokeWidth]="2"
+                ></hugeicons-icon>
+                <span>{{
+                  tableCopiedFeedback() ? '¡Tabla Copiada!' : 'Copiar Tabla (Excel)'
+                }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-matrix-action"
+                (click)="emitIndividualToMatrix()"
+                [disabled]="projectedReach() <= 0"
+              >
+                <span>Enviar a Matriz Cross Reach</span>
+                <hugeicons-icon
+                  [icon]="ArrowUpRight01Icon"
+                  [size]="16"
+                  [strokeWidth]="2"
+                ></hugeicons-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-scroll-wrap">
+            <table class="scenarios-table">
+              <thead>
+                <tr>
+                  <th>Escenario</th>
+                  <th class="col-numeric">Inversión</th>
+                  <th class="col-numeric">Alcance Proyectado</th>
+                  <th class="col-numeric">% Universo</th>
+                  <th class="col-numeric">CPMa Proyectado</th>
+                  <th class="col-numeric">Diferencia vs. Base</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of sensitivityScenarios(); track row.id) {
+                  <tr class="scenario-row" [class.is-base-row]="row.isBase">
+                    <td class="scenario-name-cell">
+                      <span>{{ row.label }}</span>
+                      @if (row.isBase) {
+                        <span class="base-tag">Activo</span>
+                      }
+                    </td>
+                    <td class="col-numeric tabular">
+                      {{ formatCurrency(row.investment, activeCurrency()) }}
+                    </td>
+                    <td class="col-numeric tabular reach-strong">
+                      {{ formatInteger(row.projectedReach) }}
+                    </td>
+                    <td class="col-numeric tabular">{{ row.universePct.toFixed(2) }}%</td>
+                    <td class="col-numeric tabular">
+                      {{ formatCurrency(row.projectedCpma, activeCurrency(), true) }}
+                    </td>
+                    <td
+                      class="col-numeric tabular"
+                      [class.diff-positive]="!row.isBase && row.diffVsBase > 0"
+                      [class.diff-negative]="!row.isBase && row.diffVsBase < 0"
+                    >
+                      {{ row.isBase ? 'Referencia base' : formatReachDiff(row.diffVsBase) }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </div>
+  } @else {
+    <!-- C. Sub-Modo 2: Simulador Mix Cross-Channel (Multi-Plataforma) -->
+    <div class="mix-layout">
+      <div class="mix-main-grid">
+        <!-- Asignación de Presupuestos por Plataforma -->
+        <section class="mix-allocation-card" aria-label="Asignación de inversión por plataforma">
+          <div class="section-head">
+            <div>
+              <h4 class="chart-title">Distribución de Inversión Cross-Channel</h4>
+              <p class="chart-subtitle">
+                Activa canales y define inversión en {{ activeCurrency() }} para el corte
+                {{ selectedCut() }} ({{ selectedStage() }})
+              </p>
+            </div>
+          </div>
+
+          <div class="mix-rows-list">
+            @for (row of mixEvaluations(); track row.platform) {
+              <div
+                class="mix-channel-row"
+                [class.is-disabled]="!row.enabled"
+                [class.has-warning]="row.enabled && !row.hasData"
+              >
+                <div class="mix-row-identity">
+                  <label class="mix-checkbox-label">
+                    <input
+                      type="checkbox"
+                      class="mix-checkbox"
+                      [ngModel]="row.enabled"
+                      (ngModelChange)="toggleMixRowEnabled(row.platform, $event)"
+                    />
+                    <span class="mix-platform-icon">
+                      <app-platform-icon [platformName]="row.platform"></app-platform-icon>
+                    </span>
+                    <span class="mix-platform-name">{{ row.platform }}</span>
+                  </label>
+
+                  @if (row.hasData) {
+                    <span
+                      class="r2-mini-badge tabular"
+                      [class.is-high]="row.reliabilityLevel === 'high'"
+                      [class.is-medium]="row.reliabilityLevel === 'medium'"
+                      [class.is-low]="row.reliabilityLevel === 'low'"
+                    >
+                      R² {{ row.rSquaredPercent.toFixed(1) }}% · n={{ row.model.sampleSize }}
+                    </span>
+                  } @else {
+                    <span class="no-data-warning-badge">
+                      <hugeicons-icon
+                        [icon]="Alert02Icon"
+                        [size]="13"
+                        [strokeWidth]="2"
+                      ></hugeicons-icon>
+                      <span>
+                        Sin datos en {{ row.buyType }}
+                        @if (row.availableBuyTypes.length > 0) {
+                          (disp: {{ row.availableBuyTypes.join(', ') }})
+                        }
+                      </span>
+                    </span>
+                  }
+                </div>
+
+                <div class="mix-row-controls">
+                  <div class="mix-field">
+                    <label [attr.for]="'mix-buy-' + row.platform" class="mix-field-label">
+                      Compra
+                    </label>
+                    <select
+                      [id]="'mix-buy-' + row.platform"
+                      class="mix-select"
+                      [disabled]="!row.enabled"
+                      [ngModel]="row.buyType"
+                      (ngModelChange)="setMixRowBuyType(row.platform, $event)"
+                    >
+                      @for (bt of mixBuyTypes; track bt) {
+                        <option [value]="bt">{{ bt }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="mix-field mix-budget-field">
+                    <label [attr.for]="'mix-budget-' + row.platform" class="mix-field-label">
+                      Inversión ({{ activeCurrency() }})
+                    </label>
+                    <input
+                      [id]="'mix-budget-' + row.platform"
+                      type="number"
+                      min="0"
+                      step="any"
+                      class="mix-budget-input tabular"
+                      [disabled]="!row.enabled"
+                      [ngModel]="row.budget"
+                      (ngModelChange)="onMixRowBudgetChange(row.platform, $event)"
+                    />
+                  </div>
+
+                  <div class="mix-metric-box">
+                    <span class="mix-field-label">Alcance Individual</span>
+                    <strong class="mix-metric-value tabular">
+                      {{ formatInteger(row.projectedReach) }}
+                    </strong>
+                  </div>
+
+                  <div class="mix-metric-box">
+                    <span class="mix-field-label">CPMa</span>
+                    <strong class="mix-metric-value tabular">
+                      {{ formatCurrency(row.cpma, activeCurrency(), true) }}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Panel Resumen Ejecutivo Cross-Channel -->
+        <aside class="mix-summary-card" aria-label="Resumen ejecutivo Cross-Channel">
+          <div class="summary-header">
+            <span class="summary-kicker">Resultado Consolidado</span>
+            <h4 class="summary-title">Cross Reach Deduplicado · {{ selectedCountry() }}</h4>
+          </div>
+
+          <div class="net-reach-hero">
+            <span class="hero-label">Alcance Neto Deduplicado</span>
+            <div class="hero-value tabular">{{ formatInteger(mixSummary().netCrossReach) }}</div>
+            <div class="hero-penetration tabular">
+              <span>{{ mixSummary().netPenetrationPct.toFixed(2) }}% de penetración del país</span>
+            </div>
+            <div class="penetration-track" aria-hidden="true">
+              <div class="penetration-fill" [style.width.%]="mixSummary().netPenetrationPct"></div>
+            </div>
+          </div>
+
+          <div class="summary-metrics-grid">
+            <div class="summary-stat">
+              <span class="stat-label">Inversión Total del Mix</span>
+              <strong class="stat-value tabular">
+                {{ formatCurrency(mixSummary().totalInvestment, activeCurrency()) }}
+              </strong>
+            </div>
+
+            <div class="summary-stat">
+              <span class="stat-label">CPMa Neto Deduplicado</span>
+              <strong class="stat-value tabular">
+                {{ formatCurrency(mixSummary().netCpma, activeCurrency(), true) }}
+              </strong>
+            </div>
+
+            <div class="summary-stat">
+              <span class="stat-label">Alcance Bruto (Suma)</span>
+              <strong class="stat-value tabular">
+                {{ formatInteger(mixSummary().grossReach) }}
+              </strong>
+            </div>
+
+            <div class="summary-stat is-highlight">
+              <span class="stat-label">Duplicados Prevenidos</span>
+              <strong class="stat-value tabular">
+                {{ formatInteger(mixSummary().duplicatesPrevented) }}
+                <span class="stat-subpct">
+                  ({{ mixSummary().deduplicationEfficiencyPct.toFixed(1) }}%)
+                </span>
+              </strong>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn-matrix-action btn-full-width"
+            (click)="emitMixToMatrix()"
+            [disabled]="mixSummary().netCrossReach <= 0"
+          >
+            <span>Enviar Mix Completo a Matriz Cross Reach</span>
+            <hugeicons-icon
+              [icon]="ArrowUpRight01Icon"
+              [size]="16"
+              [strokeWidth]="2"
+            ></hugeicons-icon>
+          </button>
+        </aside>
+      </div>
+
+      <!-- Gráfico Comparativo ECharts Mix Cross-Channel -->
+      <section class="chart-card" aria-label="Comparativa de alcance individual vs neto">
+        <div class="chart-header-row">
+          <div>
+            <h4 class="chart-title">
+              Comparativa de Alcance Individual vs. Alcance Neto Cross-Channel
+            </h4>
+            <p class="chart-subtitle">
+              Contribución individual por canal frente al alcance neto deduplicado en
+              {{ selectedCountry() }}
+            </p>
+          </div>
+        </div>
+
+        @if (activeModeledMixRows().length === 0) {
+          <div class="mix-chart-empty">
+            <hugeicons-icon
+              [icon]="Alert02Icon"
+              [size]="22"
+              [strokeWidth]="1.9"
+              color="#64748b"
+            ></hugeicons-icon>
+            <p>
+              Activa al menos una plataforma con presupuesto e historial disponible para visualizar
+              la comparativa del Mix Cross-Channel.
+            </p>
+          </div>
+        } @else {
+          <div #mixChart class="echarts-canvas-box mix-echarts-box"></div>
+        }
+      </section>
+    </div>
+  }
+</section>
