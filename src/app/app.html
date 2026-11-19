@@ -154,10 +154,22 @@
         (openSaveModal)="openSaveModal()"
       ></app-results-table>
     } @else {
-      <app-reach-curves-view
-        (notify)="showToast($event)"
-        (sendProjectionToMatrix)="handleProjectionToMatrix($event)"
-      ></app-reach-curves-view>
+      @defer (when activeView() === 'curves') {
+        <app-reach-curves-view
+          (notify)="showToast($event)"
+          (sendProjectionToMatrix)="handleProjectionToMatrix($event)"
+        ></app-reach-curves-view>
+      } @placeholder {
+        <div class="curves-defer-card" role="status" aria-live="polite">
+          <span class="curves-defer-spinner" aria-hidden="true"></span>
+          <span>Cargando módulo de Curvas de Alcance...</span>
+        </div>
+      } @loading (after 100ms; minimum 150ms) {
+        <div class="curves-defer-card" role="status" aria-live="polite">
+          <span class="curves-defer-spinner" aria-hidden="true"></span>
+          <span>Preparando simulador y gráficos interactivos...</span>
+        </div>
+      }
     }
   </main>
 

@@ -1,5 +1,4 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import * as XLSX from 'xlsx';
 import {
   AvailableCombinationItem,
   CurveBuyType,
@@ -568,6 +567,7 @@ export class ReachCurveService {
     files: File[],
     selectedPlatform: UploadPlatformSource,
   ): Promise<ParseExcelFilesResult> {
+    const XLSX = await import('xlsx');
     const allRecords: ReachCurveRecord[] = [];
     const summaries: FileParseSummary[] = [];
 

@@ -434,3 +434,33 @@
     font-size: 12.5px;
   }
 }
+
+.curves-defer-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 48px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.curves-defer-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #e2e8f0;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: curvesDeferSpin 0.75s linear infinite;
+}
+
+@keyframes curvesDeferSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { AppComponent } from './app';
 import { DEFAULT_COUNTRY_UNIVERSES } from './models/platform.models';
@@ -207,6 +207,12 @@ describe('AppComponent', () => {
     await fixture.whenStable();
 
     expect(component.activeView()).toBe('curves');
+    const deferBlocks = await fixture.getDeferBlocks();
+    expect(deferBlocks.length).toBeGreaterThanOrEqual(1);
+    await deferBlocks[0].render(DeferBlockState.Complete);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
     const sendBtn = el.querySelector(
       'app-reach-curves-view app-reach-curve-simulator .btn-matrix-action',
     ) as HTMLButtonElement | null;
