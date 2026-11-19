@@ -44,6 +44,7 @@ function makeRecord(overrides: Partial<ReachCurveRecord> = {}): ReachCurveRecord
     cpma: overrides.cpma ?? (inversion / alcance) * 1000,
     cpm_imp: overrides.cpm_imp ?? (impresiones > 0 ? (inversion / impresiones) * 1000 : 0),
     source_file: overrides.source_file ?? 'test.xlsx',
+    ...(overrides.updated_at !== undefined ? { updated_at: overrides.updated_at } : {}),
   };
 }
 
@@ -953,6 +954,222 @@ describe('ReachCurveService', () => {
       expect(crossReachService.getCountryUniverse('Peru')).toBe(18_500_000);
       expect(crossReachService.getCountryUniverse('Costa Rica')).toBe(3_500_000);
       expect(crossReachService.getCountryUniverse('Unknown')).toBe(0);
+    });
+  });
+
+  describe('Data freshness and upsertRecords updated_at stamping', () => {
+    it('returns empty dataFreshness state when no records are loaded', () => {
+      expect(service.dataFreshness()).toEqual({
+        hasData: false,
+        latestPeriodRaw: null,
+        latestPeriodLabel: 'Sin datos',
+        lastUpdatedAt: null,
+        lastUpdatedLabel: 'Sin datos',
+        byPlatform: [
+          {
+            platform: 'Meta',
+            latestPeriodRaw: null,
+            latestPeriodLabel: 'Sin datos',
+            recordsCount: 0,
+          },
+          {
+            platform: 'TikTok',
+            latestPeriodRaw: null,
+            latestPeriodLabel: 'Sin datos',
+            recordsCount: 0,
+          },
+          {
+            platform: 'YouTube',
+            latestPeriodRaw: null,
+            latestPeriodLabel: 'Sin datos',
+            recordsCount: 0,
+          },
+          {
+            platform: 'Display',
+            latestPeriodRaw: null,
+            latestPeriodLabel: 'Sin datos',
+            recordsCount: 0,
+          },
+        ],
+      });
+    });
+
+    it('stamps updated_at with the same ISO timestamp in memory, localStorage, and POST payload during upsertRecords', async () => {
+      vi.useFakeTimers();
+      try {
+        const fixedDate = new Date('2026-06-15T15:45:30.000Z');
+        vi.setSystemTime(fixedDate);
+
+        const postedBodies: ReachCurveRecord[][] = [];
+        vi.stubGlobal(
+          'fetch',
+          vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = String(input);
+            if (url.includes('reach_curve_records') && init?.method === 'POST') {
+              postedBodies.push(JSON.parse(String(init.body)) as ReachCurveRecord[]);
+              return new Response(null, { status: 201 });
+            }
+            return new Response(JSON.stringify([]), { status: 200 });
+          }),
+        );
+
+        await service.upsertRecords([
+          makeRecord({ campana_nombre: 'Stamp_1', periodo: '2026-04', plataforma: 'Meta' }),
+          makeRecord({
+            campana_nombre: 'Stamp_2',
+            periodo: '2026-05',
+            plataforma: 'TikTok',
+            updated_at: '2024-01-01T00:00:00.000Z',
+          }),
+        ]);
+
+        const expectedIso = fixedDate.toISOString();
+        expect(service.records()).toHaveLength(2);
+        expect(service.records().every((r) => r.updated_at === expectedIso)).toBe(true);
+
+        const cachedRaw = localStorage.getItem('cross_reach_curve_records_v1');
+        expect(cachedRaw).not.toBeNull();
+        const cached = JSON.parse(cachedRaw!) as ReachCurveRecord[];
+        expect(cached).toHaveLength(2);
+        expect(cached.every((r) => r.updated_at === expectedIso)).toBe(true);
+
+        expect(postedBodies).toHaveLength(1);
+        expect(postedBodies[0].every((r) => r.updated_at === expectedIso)).toBe(true);
+
+        expect(service.dataFreshness().lastUpdatedAt).toBe(expectedIso);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('computes multi-period and multi-platform dataFreshness without UTC-offset shift', async () => {
+      const olderTs = '2026-01-05T10:15:00.000Z';
+      const newerTs = '2026-05-18T19:30:00.000Z';
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: RequestInfo | URL) => {
+          const url = String(input);
+          if (url.includes('reach_curve_records')) {
+            return new Response(
+              JSON.stringify([
+                makeRecord({
+                  campana_nombre: 'Meta_Jan',
+                  plataforma: 'Meta',
+                  periodo: '2026-01',
+                  updated_at: olderTs,
+                }),
+                makeRecord({
+                  campana_nombre: 'Meta_Dec',
+                  plataforma: 'Meta',
+                  periodo: '2026-12',
+                  updated_at: newerTs,
+                }),
+                makeRecord({
+                  campana_nombre: 'TT_Sep',
+                  plataforma: 'TikTok',
+                  periodo: '2026-09',
+                  updated_at: olderTs,
+                }),
+                makeRecord({
+                  campana_nombre: 'YT_Pending',
+                  plataforma: 'YouTube',
+                  periodo: 'PENDING',
+                  updated_at: 'invalid-timestamp',
+                }),
+              ]),
+              { status: 200 },
+            );
+          }
+          return new Response(JSON.stringify([]), { status: 200 });
+        }),
+      );
+
+      await service.loadRecords();
+      const freshness = service.dataFreshness();
+
+      const expectedFormattedDate = new Intl.DateTimeFormat('es-CO', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(new Date(newerTs));
+
+      expect(freshness.hasData).toBe(true);
+      expect(freshness.latestPeriodRaw).toBe('2026-12');
+      expect(freshness.latestPeriodLabel).toBe('Diciembre 2026');
+      expect(freshness.lastUpdatedAt).toBe(newerTs);
+      expect(freshness.lastUpdatedLabel).toBe(expectedFormattedDate);
+      expect(freshness.byPlatform).toEqual([
+        {
+          platform: 'Meta',
+          latestPeriodRaw: '2026-12',
+          latestPeriodLabel: 'Diciembre 2026',
+          recordsCount: 2,
+        },
+        {
+          platform: 'TikTok',
+          latestPeriodRaw: '2026-09',
+          latestPeriodLabel: 'Septiembre 2026',
+          recordsCount: 1,
+        },
+        {
+          platform: 'YouTube',
+          latestPeriodRaw: null,
+          latestPeriodLabel: 'Sin datos',
+          recordsCount: 1,
+        },
+        {
+          platform: 'Display',
+          latestPeriodRaw: null,
+          latestPeriodLabel: 'Sin datos',
+          recordsCount: 0,
+        },
+      ]);
+    });
+
+    it('formats January and missing updated_at timestamps accurately in dataFreshness', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: RequestInfo | URL) => {
+          const url = String(input);
+          if (url.includes('reach_curve_records')) {
+            return new Response(
+              JSON.stringify([
+                makeRecord({
+                  campana_nombre: 'Meta_Enero',
+                  plataforma: 'Meta',
+                  periodo: '2026-01',
+                }),
+                makeRecord({
+                  campana_nombre: 'Display_Feb',
+                  plataforma: 'Display',
+                  periodo: '2026-02',
+                }),
+              ]),
+              { status: 200 },
+            );
+          }
+          return new Response(JSON.stringify([]), { status: 200 });
+        }),
+      );
+
+      await service.loadRecords();
+      const freshness = service.dataFreshness();
+
+      expect(freshness.hasData).toBe(true);
+      expect(freshness.latestPeriodRaw).toBe('2026-02');
+      expect(freshness.latestPeriodLabel).toBe('Febrero 2026');
+      expect(freshness.lastUpdatedAt).toBeNull();
+      expect(freshness.lastUpdatedLabel).toBe('Sin fecha registrada');
+      expect(freshness.byPlatform.find((p) => p.platform === 'Meta')?.latestPeriodLabel).toBe(
+        'Enero 2026',
+      );
+      expect(freshness.byPlatform.find((p) => p.platform === 'Display')?.latestPeriodLabel).toBe(
+        'Febrero 2026',
+      );
     });
   });
 });

@@ -2,21 +2,27 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   effect,
   inject,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HugeiconsIconComponent } from '@hugeicons/angular';
 import {
+  Alert02Icon,
   Analytics02Icon,
+  ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  BookOpen01Icon,
   Calendar01Icon,
   Cancel01Icon,
   ChartLineData02Icon,
+  Clock01Icon,
   CloudUploadIcon,
   Exchange01Icon,
   FilterIcon,
@@ -28,6 +34,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { PlatformIconComponent } from '../../shared/components/platform-icon/platform-icon.component';
 import { ReachCurveImportModalComponent } from '../reach-curve-import-modal/reach-curve-import-modal.component';
+import { ReachCurvesDocModalComponent } from '../reach-curves-doc-modal/reach-curves-doc-modal.component';
 import { ReachCurveSimulatorComponent } from '../reach-curve-simulator/reach-curve-simulator.component';
 import { ReachCurveService } from '../../services/reach-curve.service';
 import {
@@ -37,6 +44,8 @@ import {
   CurveCut,
   CurveStage,
   CurveSyncStatus,
+  PlatformFreshnessItem,
+  ReachCurveFreshness,
   ReachCurvePlatform,
   ReachCurveRecord,
   SendProjectionToMatrixPayload,
@@ -91,15 +100,21 @@ export interface AuditDisplayRow {
     HugeiconsIconComponent,
     PlatformIconComponent,
     ReachCurveImportModalComponent,
+    ReachCurvesDocModalComponent,
     ReachCurveSimulatorComponent,
   ],
   templateUrl: './reach-curves-view.component.html',
   styleUrl: './reach-curves-view.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'onDocumentEscape()',
+    '(document:click)': 'onDocumentClick($event)',
+  },
 })
 export class ReachCurvesViewComponent {
   readonly reachCurveService = inject(ReachCurveService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly freshnessWrapRef = viewChild<ElementRef<HTMLElement>>('freshnessWrap');
 
   readonly notify = output<string>();
   readonly sendProjectionToMatrix = output<SendProjectionToMatrixPayload>();
@@ -116,9 +131,13 @@ export class ReachCurvesViewComponent {
   readonly Calendar01Icon = Calendar01Icon;
   readonly ArrowLeft01Icon = ArrowLeft01Icon;
   readonly ArrowRight01Icon = ArrowRight01Icon;
+  readonly ArrowDown01Icon = ArrowDown01Icon;
   readonly Tick02Icon = Tick02Icon;
   readonly Cancel01Icon = Cancel01Icon;
   readonly Layers01Icon = Layers01Icon;
+  readonly Clock01Icon = Clock01Icon;
+  readonly BookOpen01Icon = BookOpen01Icon;
+  readonly Alert02Icon = Alert02Icon;
 
   // Catálogos de opciones
   readonly countries = CURVE_COUNTRIES;
@@ -128,16 +147,25 @@ export class ReachCurvesViewComponent {
   readonly buyTypes = CURVE_BUY_TYPES;
   readonly pageSize = 25;
 
-  // Estado de navegación interna y tasas de cambio
+  // Estado de navegación interna, modales, frescura y tasas de cambio
   readonly activeTab = signal<ReachCurvesTab>(
     this.reachCurveService.records().length > 0 ? 'simulator' : 'audit',
   );
   readonly showImportModal = signal<boolean>(false);
+  readonly isCurvesDocOpen = signal<boolean>(false);
+  readonly isFreshnessPopoverOpen = signal<boolean>(false);
+  readonly isFreshnessPopoverHovered = signal<boolean>(false);
   readonly isRefreshing = signal<boolean>(false);
   readonly copToUsdInput = signal<number>(4200);
   readonly mxnToUsdInput = signal<number>(20);
   readonly rateError = signal<string | null>(null);
   readonly rateSavedBanner = signal<boolean>(false);
+
+  readonly showFreshnessPopover = computed<boolean>(
+    () =>
+      this.reachCurveService.dataFreshness().hasData &&
+      (this.isFreshnessPopoverOpen() || this.isFreshnessPopoverHovered()),
+  );
 
   private userSelectedTab = false;
   private previousRecordsCount = this.reachCurveService.records().length;
@@ -355,11 +383,84 @@ export class ReachCurvesViewComponent {
   }
 
   openImportModal(): void {
+    this.closeFreshnessPopover();
     this.showImportModal.set(true);
   }
 
   closeImportModal(): void {
     this.showImportModal.set(false);
+  }
+
+  openCurvesDocModal(): void {
+    this.closeFreshnessPopover();
+    this.isCurvesDocOpen.set(true);
+  }
+
+  closeCurvesDocModal(): void {
+    this.isCurvesDocOpen.set(false);
+  }
+
+  toggleFreshnessPopover(): void {
+    if (this.isFreshnessPopoverOpen()) {
+      this.closeFreshnessPopover();
+      return;
+    }
+    this.isFreshnessPopoverOpen.set(true);
+  }
+
+  closeFreshnessPopover(): void {
+    this.isFreshnessPopoverOpen.set(false);
+    this.isFreshnessPopoverHovered.set(false);
+  }
+
+  onFreshnessMouseEnter(): void {
+    this.isFreshnessPopoverHovered.set(true);
+  }
+
+  onFreshnessMouseLeave(): void {
+    this.isFreshnessPopoverHovered.set(false);
+  }
+
+  onFreshnessFocusIn(): void {
+    this.isFreshnessPopoverHovered.set(true);
+  }
+
+  onFreshnessFocusOut(event: FocusEvent): void {
+    const wrap = this.freshnessWrapRef()?.nativeElement;
+    const related = event.relatedTarget;
+    if (wrap && related instanceof Node && wrap.contains(related)) {
+      return;
+    }
+    this.isFreshnessPopoverHovered.set(false);
+  }
+
+  onDocumentEscape(): void {
+    if (this.showFreshnessPopover()) {
+      this.closeFreshnessPopover();
+    }
+  }
+
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.showFreshnessPopover()) {
+      return;
+    }
+    const wrap = this.freshnessWrapRef()?.nativeElement;
+    if (wrap && event.target instanceof Node && !wrap.contains(event.target)) {
+      this.closeFreshnessPopover();
+    }
+  }
+
+  isPlatformOutdated(item: PlatformFreshnessItem, globalLatestPeriodRaw: string | null): boolean {
+    if (!globalLatestPeriodRaw || item.recordsCount === 0 || !item.latestPeriodRaw) {
+      return false;
+    }
+    return item.latestPeriodRaw < globalLatestPeriodRaw;
+  }
+
+  hasAnyOutdatedPlatform(freshness: ReachCurveFreshness): boolean {
+    return freshness.byPlatform.some((item) =>
+      this.isPlatformOutdated(item, freshness.latestPeriodRaw),
+    );
   }
 
   handleImportCompleted(event: { savedCount: number; syncStatus: CurveSyncStatus }): void {

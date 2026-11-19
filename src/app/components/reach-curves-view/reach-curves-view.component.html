@@ -33,6 +33,16 @@
       <div class="header-actions-group">
         <button
           type="button"
+          class="btn-secondary-action btn-doc-action"
+          (click)="openCurvesDocModal()"
+          title="Abrir guía paso a paso, fórmulas matemáticas y reglas de datos"
+        >
+          <hugeicons-icon [icon]="BookOpen01Icon" [size]="16" [strokeWidth]="1.9"></hugeicons-icon>
+          <span>Guía y Fórmulas</span>
+        </button>
+
+        <button
+          type="button"
           class="btn-secondary-action"
           (click)="refreshData()"
           [disabled]="isRefreshing() || reachCurveService.isLoading()"
@@ -57,6 +67,137 @@
           <span>Importar Reportes Excel</span>
         </button>
       </div>
+    </div>
+
+    <!-- Cápsula de Frescura de Datos -->
+    @let freshness = reachCurveService.dataFreshness();
+    <div class="freshness-bar">
+      @if (!freshness.hasData) {
+        <div class="freshness-capsule is-empty" role="status">
+          <span class="freshness-dot is-gray" aria-hidden="true"></span>
+          <span class="freshness-empty-text">Sin datos históricos cargados aún</span>
+        </div>
+      } @else {
+        <div
+          #freshnessWrap
+          class="freshness-capsule-wrap"
+          (mouseenter)="onFreshnessMouseEnter()"
+          (mouseleave)="onFreshnessMouseLeave()"
+          (focusin)="onFreshnessFocusIn()"
+          (focusout)="onFreshnessFocusOut($event)"
+        >
+          <button
+            type="button"
+            class="freshness-capsule is-interactive"
+            [class.is-popover-open]="showFreshnessPopover()"
+            aria-haspopup="true"
+            [attr.aria-expanded]="showFreshnessPopover()"
+            aria-controls="curves-freshness-popover"
+            (click)="toggleFreshnessPopover()"
+            title="Ver frescura de datos por plataforma"
+          >
+            <span class="freshness-item">
+              <span class="freshness-dot is-green" aria-hidden="true"></span>
+              <span class="freshness-label">
+                Último mes con data:
+                <strong class="freshness-value">{{ freshness.latestPeriodLabel }}</strong>
+              </span>
+            </span>
+
+            <span class="freshness-sep" aria-hidden="true"></span>
+
+            <span class="freshness-item">
+              <hugeicons-icon
+                [icon]="Clock01Icon"
+                [size]="14"
+                [strokeWidth]="2"
+                color="#64748b"
+              ></hugeicons-icon>
+              <span class="freshness-label">
+                Actualizado:
+                <strong class="freshness-value tabular">{{ freshness.lastUpdatedLabel }}</strong>
+              </span>
+            </span>
+
+            <span
+              class="freshness-chevron"
+              [class.is-rotated]="showFreshnessPopover()"
+              aria-hidden="true"
+            >
+              <hugeicons-icon
+                [icon]="ArrowDown01Icon"
+                [size]="14"
+                [strokeWidth]="2"
+              ></hugeicons-icon>
+            </span>
+          </button>
+
+          @if (showFreshnessPopover()) {
+            <div
+              id="curves-freshness-popover"
+              class="freshness-popover"
+              role="region"
+              aria-label="Desglose de frescura por plataforma"
+            >
+              <div class="freshness-popover-header">
+                <span class="freshness-popover-title">Frescura por Plataforma</span>
+                <span class="freshness-popover-sub">Último mes registrado</span>
+              </div>
+
+              <ul class="freshness-platform-list">
+                @for (item of freshness.byPlatform; track item.platform) {
+                  @let outdated = isPlatformOutdated(item, freshness.latestPeriodRaw);
+                  <li
+                    class="freshness-platform-row"
+                    [class.is-outdated]="outdated"
+                    [class.is-missing]="item.recordsCount === 0"
+                  >
+                    <div class="freshness-platform-id">
+                      <span class="freshness-platform-icon">
+                        <app-platform-icon [platformName]="item.platform"></app-platform-icon>
+                      </span>
+                      <span class="freshness-platform-name">{{ item.platform }}</span>
+                    </div>
+
+                    <div class="freshness-platform-meta">
+                      <span class="freshness-platform-period">
+                        @if (outdated) {
+                          <hugeicons-icon
+                            [icon]="Alert02Icon"
+                            [size]="13"
+                            [strokeWidth]="2"
+                            color="#d97706"
+                          ></hugeicons-icon>
+                        }
+                        <span>{{ item.latestPeriodLabel }}</span>
+                        @if (outdated) {
+                          <span class="freshness-outdated-tag">Desactualizada</span>
+                        }
+                      </span>
+                      <span class="freshness-platform-count tabular">
+                        {{ formatInteger(item.recordsCount) }}
+                        {{ item.recordsCount === 1 ? 'campaña' : 'campañas' }}
+                      </span>
+                    </div>
+                  </li>
+                }
+              </ul>
+
+              @if (hasAnyOutdatedPlatform(freshness)) {
+                <p class="freshness-popover-note">
+                  <hugeicons-icon
+                    [icon]="Alert02Icon"
+                    [size]="13"
+                    [strokeWidth]="2"
+                    color="#d97706"
+                  ></hugeicons-icon>
+                  <span>Plataforma con histórico anterior al mes más reciente.</span>
+                </p>
+              }
+            </div>
+          }
+        </div>
+      }
     </div>
 
     <!-- Configurador Compacto de Tasas de Cambio (TRM) -->
@@ -616,4 +757,10 @@
     (closeModal)="closeImportModal()"
     (importCompleted)="handleImportCompleted($event)"
   ></app-reach-curve-import-modal>
+
+  <!-- Modal de Documentación y Fórmulas de Curvas -->
+  <app-reach-curves-doc-modal
+    [isOpen]="isCurvesDocOpen()"
+    (closeModal)="closeCurvesDocModal()"
+  ></app-reach-curves-doc-modal>
 </section>

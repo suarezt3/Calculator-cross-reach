@@ -122,3 +122,19 @@ export interface SendProjectionToMatrixPayload {
   country: CurveCountry;
   platforms: MatrixProjectionPlatform[];
 }
+
+export interface PlatformFreshnessItem {
+  readonly platform: ReachCurvePlatform;
+  readonly latestPeriodRaw: string | null;
+  readonly latestPeriodLabel: string;
+  readonly recordsCount: number;
+}
+
+export interface ReachCurveFreshness {
+  readonly hasData: boolean;
+  readonly latestPeriodRaw: string | null;
+  readonly latestPeriodLabel: string;
+  readonly lastUpdatedAt: string | null;
+  readonly lastUpdatedLabel: string;
+  readonly byPlatform: readonly PlatformFreshnessItem[];
+}

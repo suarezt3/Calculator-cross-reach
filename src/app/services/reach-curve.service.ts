@@ -12,6 +12,8 @@ import {
   ExchangeRateSettings,
   FileParseSummary,
   ParseExcelFilesResult,
+  PlatformFreshnessItem,
+  ReachCurveFreshness,
   ReachCurvePlatform,
   ReachCurveRecord,
   RecordCurrency,
@@ -180,6 +182,30 @@ const FILENAME_MONTH_CUT_REGEX = new RegExp(
   'i',
 );
 
+const SPANISH_MONTH_NAMES: readonly string[] = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
+
+const REACH_CURVE_PLATFORMS: readonly ReachCurvePlatform[] = [
+  'Meta',
+  'TikTok',
+  'YouTube',
+  'Display',
+];
+
+const VALID_PERIOD_REGEX = /^(\d{4})-(0[1-9]|1[0-2])$/;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -201,6 +227,70 @@ export class ReachCurveService {
       }
     }
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  });
+
+  readonly dataFreshness = computed<ReachCurveFreshness>(() => {
+    const allRecords = this.records();
+    const hasData = allRecords.length > 0;
+
+    let globalLatestPeriod: string | null = null;
+    let latestUpdatedMs = -Infinity;
+    let lastUpdatedAt: string | null = null;
+
+    const platformStats = new Map<
+      ReachCurvePlatform,
+      { recordsCount: number; latestPeriodRaw: string | null }
+    >();
+    for (const platform of REACH_CURVE_PLATFORMS) {
+      platformStats.set(platform, { recordsCount: 0, latestPeriodRaw: null });
+    }
+
+    for (const record of allRecords) {
+      const validPeriod = this.extractValidPeriod(record.periodo);
+      if (validPeriod && (globalLatestPeriod === null || validPeriod > globalLatestPeriod)) {
+        globalLatestPeriod = validPeriod;
+      }
+
+      const rawUpdatedAt = record.updated_at;
+      if (typeof rawUpdatedAt === 'string') {
+        const trimmedUpdatedAt = rawUpdatedAt.trim();
+        if (trimmedUpdatedAt.length > 0) {
+          const parsedMs = Date.parse(trimmedUpdatedAt);
+          if (Number.isFinite(parsedMs) && parsedMs > latestUpdatedMs) {
+            latestUpdatedMs = parsedMs;
+            lastUpdatedAt = new Date(parsedMs).toISOString();
+          }
+        }
+      }
+
+      const stat = platformStats.get(record.plataforma);
+      if (stat) {
+        stat.recordsCount += 1;
+        if (validPeriod && (stat.latestPeriodRaw === null || validPeriod > stat.latestPeriodRaw)) {
+          stat.latestPeriodRaw = validPeriod;
+        }
+      }
+    }
+
+    const byPlatform: PlatformFreshnessItem[] = REACH_CURVE_PLATFORMS.map((platform) => {
+      const stat = platformStats.get(platform)!;
+      const latestPeriodRaw = stat.recordsCount > 0 ? stat.latestPeriodRaw : null;
+      return {
+        platform,
+        latestPeriodRaw,
+        latestPeriodLabel: this.formatPeriodLabel(latestPeriodRaw),
+        recordsCount: stat.recordsCount,
+      };
+    });
+
+    return {
+      hasData,
+      latestPeriodRaw: globalLatestPeriod,
+      latestPeriodLabel: this.formatPeriodLabel(globalLatestPeriod),
+      lastUpdatedAt,
+      lastUpdatedLabel: this.formatLastUpdatedLabel(lastUpdatedAt, hasData),
+      byPlatform,
+    };
   });
 
   constructor() {
@@ -422,11 +512,17 @@ export class ReachCurveService {
 
     this.isSaving.set(true);
 
+    const nowIso = new Date().toISOString();
+    const stampedBatch: ReachCurveRecord[] = dedupedBatch.map((incoming) => ({
+      ...incoming,
+      updated_at: nowIso,
+    }));
+
     const mergedMap = new Map<string, ReachCurveRecord>();
     for (const existing of this.records()) {
       mergedMap.set(existing.record_key, existing);
     }
-    for (const incoming of dedupedBatch) {
+    for (const incoming of stampedBatch) {
       mergedMap.set(incoming.record_key, incoming);
     }
     const mergedRecords = Array.from(mergedMap.values());
@@ -438,9 +534,8 @@ export class ReachCurveService {
         throw new Error('Fetch no disponible en este entorno.');
       }
 
-      for (let start = 0; start < dedupedBatch.length; start += UPSERT_BATCH_SIZE) {
-        const chunk = dedupedBatch.slice(start, start + UPSERT_BATCH_SIZE);
-        const nowIso = new Date().toISOString();
+      for (let start = 0; start < stampedBatch.length; start += UPSERT_BATCH_SIZE) {
+        const chunk = stampedBatch.slice(start, start + UPSERT_BATCH_SIZE);
         const payload = chunk.map((rec) => ({
           record_key: rec.record_key,
           periodo: rec.periodo,
@@ -1672,5 +1767,41 @@ export class ReachCurveService {
 
   private stripAccents(value: string): string {
     return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private extractValidPeriod(period: string | undefined | null): string | null {
+    if (typeof period !== 'string') {
+      return null;
+    }
+    const trimmed = period.trim();
+    return VALID_PERIOD_REGEX.test(trimmed) ? trimmed : null;
+  }
+
+  private formatPeriodLabel(periodRaw: string | null): string {
+    if (!periodRaw || !VALID_PERIOD_REGEX.test(periodRaw)) {
+      return 'Sin datos';
+    }
+    const [year, monthStr] = periodRaw.split('-');
+    const monthIndex = Number(monthStr) - 1;
+    const monthName = SPANISH_MONTH_NAMES[monthIndex];
+    return monthName ? `${monthName} ${year}` : 'Sin datos';
+  }
+
+  private formatLastUpdatedLabel(lastUpdatedAt: string | null, hasData: boolean): string {
+    if (!lastUpdatedAt) {
+      return hasData ? 'Sin fecha registrada' : 'Sin datos';
+    }
+    const date = new Date(lastUpdatedAt);
+    if (Number.isNaN(date.getTime())) {
+      return hasData ? 'Sin fecha registrada' : 'Sin datos';
+    }
+    return new Intl.DateTimeFormat('es-CO', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
   }
 }

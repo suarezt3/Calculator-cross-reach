@@ -461,4 +461,211 @@ describe('ReachCurvesViewComponent', () => {
     expect(emitted[0].platforms[0].platformId).toBe('Meta');
     expect(emitted[0].platforms[0].reach).toBeGreaterThan(0);
   });
+
+  it('renders empty data freshness capsule when no historical records exist', async () => {
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(service.records()).toHaveLength(0);
+    expect(service.dataFreshness().hasData).toBe(false);
+
+    const emptyCapsule = el.querySelector('.freshness-capsule.is-empty');
+    expect(emptyCapsule).not.toBeNull();
+    expect(emptyCapsule?.querySelector('.freshness-dot.is-gray')).not.toBeNull();
+    expect(emptyCapsule?.textContent).toContain('Sin datos históricos cargados aún');
+    expect(el.querySelector('.freshness-capsule.is-interactive')).toBeNull();
+    expect(el.querySelector('#curves-freshness-popover')).toBeNull();
+  });
+
+  it('renders populated freshness capsule, platform breakdown popover with outdated flag, and closes on toggle/Escape/outside click', async () => {
+    const olderTs = '2026-01-10T10:00:00.000Z';
+    const latestTs = '2026-03-20T18:45:00.000Z';
+
+    service.records.set([
+      makeRecord({
+        campana_nombre: 'Fresh_Meta_Mar',
+        plataforma: 'Meta',
+        periodo: '2026-03',
+        updated_at: latestTs,
+      }),
+      makeRecord({
+        campana_nombre: 'Fresh_TT_Jan',
+        plataforma: 'TikTok',
+        periodo: '2026-01',
+        updated_at: olderTs,
+      }),
+      makeRecord({
+        campana_nombre: 'Fresh_YT_Mar',
+        plataforma: 'YouTube',
+        periodo: '2026-03',
+        updated_at: olderTs,
+      }),
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const freshness = service.dataFreshness();
+    expect(freshness.latestPeriodRaw).toBe('2026-03');
+    expect(freshness.latestPeriodLabel).toBe('Marzo 2026');
+
+    const capsuleBtn = el.querySelector(
+      '.freshness-capsule.is-interactive',
+    ) as HTMLButtonElement | null;
+    expect(capsuleBtn).not.toBeNull();
+    expect(capsuleBtn?.querySelector('.freshness-dot.is-green')).not.toBeNull();
+    expect(capsuleBtn?.textContent).toContain('Último mes con data:');
+    expect(capsuleBtn?.textContent).toContain('Marzo 2026');
+    expect(capsuleBtn?.textContent).toContain('Actualizado:');
+    expect(capsuleBtn?.textContent).toContain(freshness.lastUpdatedLabel);
+    expect(capsuleBtn?.getAttribute('aria-expanded')).toBe('false');
+    expect(el.querySelector('#curves-freshness-popover')).toBeNull();
+
+    // Open popover by clicking capsule
+    capsuleBtn!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.showFreshnessPopover()).toBe(true);
+    expect(capsuleBtn?.getAttribute('aria-expanded')).toBe('true');
+
+    const popover = el.querySelector('#curves-freshness-popover');
+    expect(popover).not.toBeNull();
+
+    const rows = Array.from(popover!.querySelectorAll('.freshness-platform-row'));
+    expect(rows).toHaveLength(4);
+
+    // Meta (up-to-date, Marzo 2026, 1 campaña)
+    expect(rows[0].textContent).toContain('Meta');
+    expect(rows[0].textContent).toContain('Marzo 2026');
+    expect(rows[0].textContent).toContain('1 campaña');
+    expect(rows[0].classList.contains('is-outdated')).toBe(false);
+
+    // TikTok (lagging Enero 2026 -> outdated warning)
+    expect(rows[1].textContent).toContain('TikTok');
+    expect(rows[1].textContent).toContain('Enero 2026');
+    expect(rows[1].textContent).toContain('Desactualizada');
+    expect(rows[1].classList.contains('is-outdated')).toBe(true);
+
+    // YouTube (up-to-date Marzo 2026)
+    expect(rows[2].textContent).toContain('YouTube');
+    expect(rows[2].textContent).toContain('Marzo 2026');
+    expect(rows[2].classList.contains('is-outdated')).toBe(false);
+
+    // Display (no records -> Sin datos, 0 campañas, missing state)
+    expect(rows[3].textContent).toContain('Display');
+    expect(rows[3].textContent).toContain('Sin datos');
+    expect(rows[3].textContent).toContain('0 campañas');
+    expect(rows[3].classList.contains('is-missing')).toBe(true);
+    expect(rows[3].classList.contains('is-outdated')).toBe(false);
+
+    expect(popover?.querySelector('.freshness-popover-note')?.textContent).toContain(
+      'Plataforma con histórico anterior al mes más reciente.',
+    );
+
+    // Second click closes popover
+    capsuleBtn!.click();
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(false);
+    expect(el.querySelector('#curves-freshness-popover')).toBeNull();
+
+    // Hover opens popover and Escape closes it
+    const wrap = el.querySelector('.freshness-capsule-wrap') as HTMLElement;
+    wrap.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(true);
+    expect(el.querySelector('#curves-freshness-popover')).not.toBeNull();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(false);
+    expect(el.querySelector('#curves-freshness-popover')).toBeNull();
+
+    // Outside click closes click-opened popover
+    capsuleBtn!.click();
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(true);
+
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(false);
+    expect(el.querySelector('#curves-freshness-popover')).toBeNull();
+
+    // Missing updated_at fallback inside capsule
+    service.records.set([
+      makeRecord({
+        campana_nombre: 'No_Date_Meta',
+        plataforma: 'Meta',
+        periodo: '2026-01',
+      }),
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.querySelector('.freshness-capsule.is-interactive')?.textContent).toContain(
+      'Enero 2026',
+    );
+    expect(el.querySelector('.freshness-capsule.is-interactive')?.textContent).toContain(
+      'Sin fecha registrada',
+    );
+  });
+
+  it('opens and closes ReachCurvesDocModalComponent via Guía y Fórmulas button without leaking infrastructure terms', async () => {
+    const el = fixture.nativeElement as HTMLElement;
+
+    // Seed record so freshness popover can also be verified to close when opening doc modal
+    service.records.set([
+      makeRecord({
+        campana_nombre: 'Doc_Trigger_01',
+        periodo: '2026-02',
+        updated_at: '2026-02-15T12:00:00.000Z',
+      }),
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const freshnessBtn = el.querySelector('.freshness-capsule.is-interactive') as HTMLButtonElement;
+    freshnessBtn.click();
+    fixture.detectChanges();
+    expect(component.showFreshnessPopover()).toBe(true);
+
+    const docBtn = el.querySelector('.btn-doc-action') as HTMLButtonElement | null;
+    expect(docBtn).not.toBeNull();
+    expect(docBtn?.textContent).toContain('Guía y Fórmulas');
+    expect(el.querySelector('app-reach-curves-doc-modal [role="dialog"]')).toBeNull();
+
+    // Click "Guía y Fórmulas" -> opens doc modal & closes freshness popover
+    docBtn!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.isCurvesDocOpen()).toBe(true);
+    expect(component.showFreshnessPopover()).toBe(false);
+
+    const docDialog = el.querySelector('app-reach-curves-doc-modal [role="dialog"]');
+    expect(docDialog).not.toBeNull();
+    expect(docDialog?.textContent).toContain('Guía Metodológica y Fórmulas de Curvas de Alcance');
+
+    // Privacy & typography check across view + doc modal
+    expect(el.textContent ?? '').not.toMatch(/supabase|postgresql|postgres|uuid/i);
+    expect(el.querySelector('.font-mono')).toBeNull();
+
+    // Close via modal button
+    const closeBtn = docDialog!.querySelector('.btn-primary-close') as HTMLButtonElement;
+    closeBtn.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.isCurvesDocOpen()).toBe(false);
+    expect(el.querySelector('app-reach-curves-doc-modal [role="dialog"]')).toBeNull();
+
+    // Reopen and close via Escape
+    docBtn!.click();
+    fixture.detectChanges();
+    expect(component.isCurvesDocOpen()).toBe(true);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.isCurvesDocOpen()).toBe(false);
+    expect(el.querySelector('app-reach-curves-doc-modal [role="dialog"]')).toBeNull();
+  });
 });

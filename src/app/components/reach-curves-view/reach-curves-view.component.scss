@@ -170,6 +170,18 @@
   }
 }
 
+.btn-doc-action {
+  background: #f8faff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+
+  &:hover:not(:disabled) {
+    background: #eef2ff;
+    border-color: #818cf8;
+    color: #312e81;
+  }
+}
+
 .is-spinning {
   animation: spinRotate 0.9s linear infinite;
 }
@@ -177,6 +189,236 @@
 @keyframes spinRotate {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Cápsula de Frescura de Datos */
+.freshness-bar {
+  display: flex;
+  align-items: center;
+}
+
+.freshness-capsule-wrap {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.freshness-capsule {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+
+  &.is-empty {
+    color: #64748b;
+  }
+
+  &.is-interactive {
+    appearance: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+
+    &:hover,
+    &.is-popover-open {
+      background: #ffffff;
+      border-color: #c7d2fe;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.09);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #4f46e5;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.freshness-item,
+.freshness-platform-period,
+.freshness-popover-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.freshness-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+
+  &.is-green {
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  }
+
+  &.is-gray {
+    background: #94a3b8;
+  }
+}
+
+.freshness-label,
+.freshness-platform-count {
+  color: #475569;
+  font-weight: 500;
+}
+
+.freshness-value,
+.freshness-popover-title,
+.freshness-platform-name {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.freshness-sep {
+  width: 1px;
+  height: 14px;
+  background: #cbd5e1;
+}
+
+.freshness-chevron {
+  display: inline-flex;
+  color: #64748b;
+  transition: transform 0.15s ease;
+
+  &.is-rotated {
+    transform: rotate(180deg);
+    color: #4f46e5;
+  }
+}
+
+.freshness-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: min(370px, calc(100vw - 48px));
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.freshness-popover-header,
+.freshness-platform-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.freshness-popover-header {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.freshness-popover-title {
+  font-size: 12px;
+}
+
+.freshness-popover-sub,
+.freshness-platform-count {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.freshness-popover-sub {
+  font-weight: 600;
+}
+
+.freshness-platform-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.freshness-platform-row {
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+
+  &.is-outdated {
+    background: #fffbeb;
+    border-color: #fde68a;
+  }
+
+  &.is-missing {
+    opacity: 0.72;
+  }
+}
+
+.freshness-platform-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.freshness-platform-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.freshness-platform-name {
+  font-size: 12.5px;
+}
+
+.freshness-platform-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.freshness-platform-period {
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.freshness-outdated-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  padding: 1px 5px;
+  border-radius: 9999px;
+}
+
+.freshness-popover-note {
+  display: flex;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+@media (max-width: 640px) {
+  .freshness-capsule {
+    border-radius: 12px;
+  }
+
+  .freshness-sep {
+    display: none;
   }
 }
 

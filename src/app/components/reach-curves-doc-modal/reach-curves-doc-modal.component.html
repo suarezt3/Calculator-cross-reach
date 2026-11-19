@@ -1,0 +1,825 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="handleClose()">
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="curves-doc-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <header class="modal-header">
+        <div class="header-left">
+          <div class="header-icon" aria-hidden="true">
+            <hugeicons-icon
+              [icon]="BookOpen01Icon"
+              [size]="20"
+              [strokeWidth]="2"
+              color="#4f46e5"
+            ></hugeicons-icon>
+          </div>
+          <div>
+            <h2 id="curves-doc-modal-title" class="modal-title">
+              Guía Metodológica y Fórmulas de Curvas de Alcance
+            </h2>
+            <p class="modal-subtitle">
+              Fundamentos estadísticos, flujo operativo y reglas de clasificación histórica
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="handleClose()"
+          aria-label="Cerrar documentación"
+        >
+          <hugeicons-icon [icon]="Cancel01Icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+        </button>
+      </header>
+
+      <!-- Tabs Bar -->
+      <div class="modal-tabs-bar">
+        <div class="modal-tabs-switcher" role="tablist" aria-label="Secciones de documentación">
+          @for (tab of tabs; track tab.id) {
+            <button
+              type="button"
+              role="tab"
+              class="modal-tab-btn"
+              [class.is-active]="activeTab() === tab.id"
+              [attr.aria-selected]="activeTab() === tab.id"
+              (click)="setTab(tab.id)"
+            >
+              <hugeicons-icon [icon]="tab.icon" [size]="16" [strokeWidth]="2"></hugeicons-icon>
+              <span>{{ tab.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="modal-body" role="tabpanel">
+        <!-- PESTAÑA 1: FÓRMULAS Y MATEMÁTICA -->
+        @if (activeTab() === 'formulas') {
+          <div class="tab-stack">
+            <!-- Card 1 & Card 2: Concepto + Aprendizaje OLS -->
+            <div class="two-col-grid">
+              <article class="doc-card">
+                <div class="card-heading">
+                  <span class="card-icon-badge" aria-hidden="true">
+                    <hugeicons-icon
+                      [icon]="ChartLineData02Icon"
+                      [size]="17"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                  </span>
+                  <div>
+                    <span class="card-eyebrow">Fundamento 01</span>
+                    <h3 class="card-title">¿Qué es una Curva de Alcance?</h3>
+                  </div>
+                </div>
+                <p class="card-text">
+                  Es una relación matemática que conecta la <strong>Inversión (eje X)</strong> con
+                  el <strong>Alcance Único de personas (eje Y)</strong> a partir del historial real
+                  de tus campañas cerradas.
+                </p>
+                <p class="card-text">
+                  Cada curva se calibra de forma independiente según el <strong>país</strong>, la
+                  <strong>plataforma</strong>, el <strong>stage</strong> y el
+                  <strong>corte temporal</strong> (W1 a W4), permitiendo proyectar resultados antes
+                  de pautar.
+                </p>
+              </article>
+
+              <article class="doc-card">
+                <div class="card-heading">
+                  <span class="card-icon-badge" aria-hidden="true">
+                    <hugeicons-icon
+                      [icon]="MathIcon"
+                      [size]="17"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                  </span>
+                  <div>
+                    <span class="card-eyebrow">Fundamento 02</span>
+                    <h3 class="card-title">¿Cómo aprende el modelo? (Mínimos Cuadrados - OLS)</h3>
+                  </div>
+                </div>
+                <p class="card-text">
+                  Cada campaña histórica válida se grafica como un punto
+                  <span class="inline-chip tabular">(Inversión, Alcance)</span>. El algoritmo de
+                  <strong>Mínimos Cuadrados Ordinarios (OLS)</strong> calcula la trayectoria que
+                  minimiza el error cuadrático frente a todos los puntos reales.
+                </p>
+                <p class="card-text">
+                  De ese ajuste automático nacen los parámetros de la ecuación con los que el
+                  simulador proyecta nuevos presupuestos.
+                </p>
+              </article>
+            </div>
+
+            <!-- Card 3: Los 2 Modelos Matemáticos -->
+            <article class="doc-card">
+              <div class="card-heading">
+                <span class="card-icon-badge" aria-hidden="true">
+                  <hugeicons-icon
+                    [icon]="FunctionIcon"
+                    [size]="17"
+                    [strokeWidth]="2"
+                    color="#4f46e5"
+                  ></hugeicons-icon>
+                </span>
+                <div>
+                  <span class="card-eyebrow">Modelado Econométrico</span>
+                  <h3 class="card-title">Los 2 Modelos Matemáticos (Comparativa lado a lado)</h3>
+                </div>
+              </div>
+
+              <div class="two-col-grid">
+                <!-- Tarjeta A: Curva Logarítmica -->
+                <div class="model-compare-card model-compare-card--recommended">
+                  <div class="model-card-header">
+                    <h4 class="model-name">Curva Logarítmica de Saturación</h4>
+                    <span class="status-pill status-pill--emerald">
+                      <hugeicons-icon
+                        [icon]="CheckmarkCircle02Icon"
+                        [size]="13"
+                        [strokeWidth]="2.2"
+                      ></hugeicons-icon>
+                      <span>Recomendada</span>
+                    </span>
+                  </div>
+                  <div class="equation-box equation-box--indigo tabular">
+                    Alcance = a · ln(Inversión) + b
+                  </div>
+                  <p class="card-text">
+                    Captura los <strong>rendimientos decrecientes</strong> reales de los medios
+                    digitales: los primeros montos captan audiencias nuevas rápidamente, pero al
+                    subir el presupuesto aumenta la <strong>frecuencia</strong> sobre los mismos
+                    usuarios y la curva se aplana de manera realista.
+                  </p>
+                </div>
+
+                <!-- Tarjeta B: Regresión Lineal -->
+                <div class="model-compare-card model-compare-card--caution">
+                  <div class="model-card-header">
+                    <h4 class="model-name">Regresión Lineal Simple</h4>
+                    <span class="status-pill status-pill--amber">
+                      <hugeicons-icon
+                        [icon]="Alert02Icon"
+                        [size]="13"
+                        [strokeWidth]="2.2"
+                      ></hugeicons-icon>
+                      <span>Uso acotado</span>
+                    </span>
+                  </div>
+                  <div class="equation-box equation-box--slate tabular">
+                    Alcance = m · Inversión + b
+                  </div>
+                  <p class="card-text">
+                    La pendiente <strong>m</strong> suma alcance constante por cada unidad invertida
+                    desde el punto base <strong>b</strong>. Al asumir crecimiento proporcional
+                    ilimitado,
+                    <strong>tiende a sobreestimar el alcance en presupuestos altos</strong>
+                    porque ignora la saturación de audiencia.
+                  </p>
+                </div>
+              </div>
+            </article>
+
+            <!-- Card 4: Reglas de Control Matemático (Blindaje) -->
+            <article class="doc-card">
+              <div class="card-heading">
+                <span class="card-icon-badge" aria-hidden="true">
+                  <hugeicons-icon
+                    [icon]="Shield01Icon"
+                    [size]="17"
+                    [strokeWidth]="2"
+                    color="#4f46e5"
+                  ></hugeicons-icon>
+                </span>
+                <div>
+                  <span class="card-eyebrow">Integridad Numérica</span>
+                  <h3 class="card-title">Reglas de Control Matemático (Blindaje)</h3>
+                </div>
+              </div>
+
+              <div class="three-col-grid">
+                <div class="shield-item">
+                  <div class="shield-title-row">
+                    <hugeicons-icon
+                      [icon]="Globe02Icon"
+                      [size]="15"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                    <h4>Techo de Universo Poblacional</h4>
+                  </div>
+                  <div class="formula-pill tabular">min(Universo, max(0, Proyección))</div>
+                  <p class="shield-desc">
+                    Impide proyectar valores negativos o superar la población digital oficial del
+                    país seleccionado.
+                  </p>
+                </div>
+
+                <div class="shield-item">
+                  <div class="shield-title-row">
+                    <hugeicons-icon
+                      [icon]="Exchange01Icon"
+                      [size]="15"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                    <h4>CPMa Ponderado Real</h4>
+                  </div>
+                  <div class="formula-pill tabular">CPMa = (Inversión / Alcance) × 1000</div>
+                  <div class="formula-pill formula-pill--subtle tabular">
+                    CPM Imp. = (Inversión / Impresiones) × 1000
+                  </div>
+                  <p class="shield-desc">
+                    Nunca promedia columnas de CPM de Excel; recalcula el costo ponderado desde las
+                    métricas base.
+                  </p>
+                </div>
+
+                <div class="shield-item">
+                  <div class="shield-title-row">
+                    <hugeicons-icon
+                      [icon]="CalculatorIcon"
+                      [size]="15"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                    <h4>Deduplicación Cross-Channel</h4>
+                  </div>
+                  <div class="formula-pill tabular">R_cross = R1 + R2 - (1.05 × R1 × R2)</div>
+                  <p class="shield-desc">
+                    Aplica solapamiento probabilístico iterativo (ordenado de mayor a menor alcance)
+                    al combinar plataformas.
+                  </p>
+                </div>
+              </div>
+            </article>
+
+            <!-- Card 5: Confiabilidad R² (Guía Semáforo) -->
+            <article class="doc-card">
+              <div class="card-heading">
+                <span class="card-icon-badge" aria-hidden="true">
+                  <hugeicons-icon
+                    [icon]="InformationCircleIcon"
+                    [size]="17"
+                    [strokeWidth]="2"
+                    color="#4f46e5"
+                  ></hugeicons-icon>
+                </span>
+                <div>
+                  <span class="card-eyebrow">Diagnóstico Estadístico</span>
+                  <h3 class="card-title">
+                    ¿Cómo interpretar la Confiabilidad (R²)? (Guía Semáforo)
+                  </h3>
+                </div>
+              </div>
+
+              <div class="three-col-grid">
+                @for (item of reliabilityItems; track item.level) {
+                  <div
+                    class="traffic-card"
+                    [class.traffic-card--high]="item.level === 'high'"
+                    [class.traffic-card--medium]="item.level === 'medium'"
+                    [class.traffic-card--low]="item.level === 'low'"
+                  >
+                    <div class="traffic-top">
+                      <span class="traffic-badge tabular">
+                        @if (item.level === 'high') {
+                          <hugeicons-icon
+                            [icon]="CheckmarkCircle02Icon"
+                            [size]="14"
+                            [strokeWidth]="2.2"
+                          ></hugeicons-icon>
+                        } @else {
+                          <hugeicons-icon
+                            [icon]="Alert02Icon"
+                            [size]="14"
+                            [strokeWidth]="2.2"
+                          ></hugeicons-icon>
+                        }
+                        <span>{{ item.threshold }}</span>
+                      </span>
+                      <strong class="traffic-title">{{ item.title }}</strong>
+                    </div>
+                    <p class="traffic-desc">{{ item.description }}</p>
+                  </div>
+                }
+              </div>
+            </article>
+
+            <!-- Card 6: Mini Ejemplo Práctico Visual -->
+            <article class="doc-card example-highlight-card">
+              <div class="card-heading">
+                <span class="card-icon-badge" aria-hidden="true">
+                  <hugeicons-icon
+                    [icon]="CalculatorIcon"
+                    [size]="17"
+                    [strokeWidth]="2"
+                    color="#4f46e5"
+                  ></hugeicons-icon>
+                </span>
+                <div>
+                  <span class="card-eyebrow">Ejemplo Práctico</span>
+                  <h3 class="card-title">
+                    Saturación Natural en Acción · Meta Colombia · CPM · Corte W4
+                  </h3>
+                </div>
+              </div>
+
+              <div class="example-comparison-grid">
+                <div class="example-scenario-box">
+                  <span class="scenario-tag">Escenario Base</span>
+                  <div class="scenario-metric-row">
+                    <div>
+                      <span class="metric-caption">Presupuesto invertido</span>
+                      <strong class="metric-val tabular">$20M COP</strong>
+                    </div>
+                    <span class="metric-arrow" aria-hidden="true">→</span>
+                    <div>
+                      <span class="metric-caption">Alcance proyectado</span>
+                      <strong class="metric-val metric-val--indigo tabular">8.2M personas</strong>
+                    </div>
+                  </div>
+                  <div class="visual-bar-group">
+                    <div class="visual-bar-label">
+                      <span>Inversión</span>
+                      <span class="tabular">100%</span>
+                    </div>
+                    <div class="visual-bar-track">
+                      <div class="visual-bar-fill visual-bar-fill--budget" style="width: 66%"></div>
+                    </div>
+                    <div class="visual-bar-label">
+                      <span>Alcance</span>
+                      <span class="tabular">8.2M</span>
+                    </div>
+                    <div class="visual-bar-track">
+                      <div class="visual-bar-fill visual-bar-fill--reach" style="width: 78%"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="example-scenario-box example-scenario-box--scaled">
+                  <span class="scenario-tag scenario-tag--accent">Escenario +50% Presupuesto</span>
+                  <div class="scenario-metric-row">
+                    <div>
+                      <span class="metric-caption">Presupuesto invertido</span>
+                      <strong class="metric-val tabular">$30M COP (+50%)</strong>
+                    </div>
+                    <span class="metric-arrow" aria-hidden="true">→</span>
+                    <div>
+                      <span class="metric-caption">Alcance proyectado</span>
+                      <strong class="metric-val metric-val--emerald tabular">
+                        9.1M personas (+11.0%)
+                      </strong>
+                    </div>
+                  </div>
+                  <div class="visual-bar-group">
+                    <div class="visual-bar-label">
+                      <span>Inversión</span>
+                      <span class="tabular">+50% ($30M)</span>
+                    </div>
+                    <div class="visual-bar-track">
+                      <div
+                        class="visual-bar-fill visual-bar-fill--budget"
+                        style="width: 100%"
+                      ></div>
+                    </div>
+                    <div class="visual-bar-label">
+                      <span>Alcance</span>
+                      <span class="tabular">+11.0% (9.1M)</span>
+                    </div>
+                    <div class="visual-bar-track">
+                      <div class="visual-bar-fill visual-bar-fill--reach" style="width: 87%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="callout-info">
+                <hugeicons-icon
+                  [icon]="InformationCircleIcon"
+                  [size]="16"
+                  [strokeWidth]="2"
+                  color="#4338ca"
+                ></hugeicons-icon>
+                <span>
+                  Aumentar <strong>+50%</strong> el presupuesto suma
+                  <strong>+900K personas (+11.0%)</strong> y no +50% de alcance: la curva
+                  logarítmica refleja que cuesta más alcanzar a los usuarios marginales cuando la
+                  audiencia comienza a saturarse.
+                </span>
+              </div>
+            </article>
+          </div>
+        }
+
+        <!-- PESTAÑA 2: CÓMO USAR ESTA VENTANA -->
+        @else if (activeTab() === 'guide') {
+          <div class="tab-stack">
+            <div class="guide-intro-banner">
+              <hugeicons-icon
+                [icon]="BookOpen01Icon"
+                [size]="18"
+                [strokeWidth]="2"
+                color="#4f46e5"
+              ></hugeicons-icon>
+              <span>
+                Sigue este flujo de <strong>5 pasos</strong> para mantener tus curvas calibradas,
+                simular presupuestos y alimentar la Matriz Cross Reach sin duplicidades.
+              </span>
+            </div>
+
+            <ol class="steps-timeline">
+              @for (step of guideSteps; track step.stepNumber) {
+                <li class="step-card">
+                  <div class="step-number-col">
+                    <span class="step-badge tabular">{{ step.stepNumber }}</span>
+                    <span class="step-icon-pill" aria-hidden="true">
+                      @if (step.stepNumber === 1) {
+                        <hugeicons-icon
+                          [icon]="Globe02Icon"
+                          [size]="16"
+                          [strokeWidth]="2"
+                          color="#4f46e5"
+                        ></hugeicons-icon>
+                      } @else if (step.stepNumber === 2) {
+                        <hugeicons-icon
+                          [icon]="CloudUploadIcon"
+                          [size]="16"
+                          [strokeWidth]="2"
+                          color="#4f46e5"
+                        ></hugeicons-icon>
+                      } @else if (step.stepNumber === 3) {
+                        <hugeicons-icon
+                          [icon]="Exchange01Icon"
+                          [size]="16"
+                          [strokeWidth]="2"
+                          color="#4f46e5"
+                        ></hugeicons-icon>
+                      } @else if (step.stepNumber === 4) {
+                        <hugeicons-icon
+                          [icon]="ChartLineData02Icon"
+                          [size]="16"
+                          [strokeWidth]="2"
+                          color="#4f46e5"
+                        ></hugeicons-icon>
+                      } @else {
+                        <hugeicons-icon
+                          [icon]="Layers01Icon"
+                          [size]="16"
+                          [strokeWidth]="2"
+                          color="#4f46e5"
+                        ></hugeicons-icon>
+                      }
+                    </span>
+                  </div>
+
+                  <div class="step-content">
+                    <h3 class="step-title">{{ step.title }}</h3>
+                    <p class="step-summary">{{ step.summary }}</p>
+
+                    <ul class="step-highlights">
+                      @for (highlight of step.highlights; track highlight) {
+                        <li>
+                          <hugeicons-icon
+                            [icon]="Tick02Icon"
+                            [size]="13"
+                            [strokeWidth]="2.4"
+                            color="#059669"
+                          ></hugeicons-icon>
+                          <span>{{ highlight }}</span>
+                        </li>
+                      }
+                    </ul>
+
+                    @if (step.tip) {
+                      <div class="step-golden-rule">
+                        <hugeicons-icon
+                          [icon]="Alert02Icon"
+                          [size]="15"
+                          [strokeWidth]="2"
+                          color="#b45309"
+                        ></hugeicons-icon>
+                        <span>{{ step.tip }}</span>
+                      </div>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          </div>
+        }
+
+        <!-- PESTAÑA 3: REGLAS DE DATOS Y DICCIONARIOS -->
+        @else {
+          <div class="tab-stack">
+            <!-- Países Activos vs Excluidos -->
+            <div class="two-col-grid">
+              <article class="doc-card">
+                <div class="card-heading">
+                  <span class="card-icon-badge" aria-hidden="true">
+                    <hugeicons-icon
+                      [icon]="Globe02Icon"
+                      [size]="17"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                  </span>
+                  <div>
+                    <span class="card-eyebrow">Cobertura Oficial</span>
+                    <h3 class="card-title">Países Activos y Universos</h3>
+                  </div>
+                </div>
+
+                <div class="table-wrap">
+                  <table class="dict-table">
+                    <thead>
+                      <tr>
+                        <th>País</th>
+                        <th>Nomenclatura</th>
+                        <th class="col-num">Universo Oficial</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of activeCountries; track item.country) {
+                        <tr>
+                          <td>
+                            <span class="country-cell">
+                              <hugeicons-icon
+                                [icon]="CheckmarkCircle02Icon"
+                                [size]="14"
+                                [strokeWidth]="2.2"
+                                color="#059669"
+                              ></hugeicons-icon>
+                              <strong>{{ item.country }}</strong>
+                            </span>
+                          </td>
+                          <td>
+                            <span class="tag-pill tabular">{{ item.codes }}</span>
+                          </td>
+                          <td class="col-num tabular">
+                            <strong>{{ formatUniverse(item.universe) }}</strong>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="doc-card">
+                <div class="card-heading">
+                  <span class="card-icon-badge card-icon-badge--amber" aria-hidden="true">
+                    <hugeicons-icon
+                      [icon]="Alert02Icon"
+                      [size]="17"
+                      [strokeWidth]="2"
+                      color="#d97706"
+                    ></hugeicons-icon>
+                  </span>
+                  <div>
+                    <span class="card-eyebrow">Limpieza Automática</span>
+                    <h3 class="card-title">Mercados y Filas Excluidas</h3>
+                  </div>
+                </div>
+
+                <ul class="exclusion-list">
+                  @for (rule of excludedRules; track rule) {
+                    <li>
+                      <hugeicons-icon
+                        [icon]="Alert02Icon"
+                        [size]="14"
+                        [strokeWidth]="2"
+                        color="#b45309"
+                      ></hugeicons-icon>
+                      <span>{{ rule }}</span>
+                    </li>
+                  }
+                </ul>
+              </article>
+            </div>
+
+            <!-- Diccionario de Stage y Tipo de Compra -->
+            <div class="two-col-grid">
+              <article class="doc-card">
+                <div class="card-heading">
+                  <span class="card-icon-badge" aria-hidden="true">
+                    <hugeicons-icon
+                      [icon]="Layers01Icon"
+                      [size]="17"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                  </span>
+                  <div>
+                    <span class="card-eyebrow">Clasificación Funnel</span>
+                    <h3 class="card-title">Diccionario de Stage</h3>
+                  </div>
+                </div>
+
+                <div class="table-wrap">
+                  <table class="dict-table">
+                    <thead>
+                      <tr>
+                        <th>Stage</th>
+                        <th>Etiqueta / Patrones</th>
+                        <th>Uso</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of stageDictionary; track row.stage) {
+                        <tr>
+                          <td>
+                            <span
+                              class="code-badge"
+                              [class.code-badge--highlight]="row.recommended"
+                            >
+                              {{ row.stage }}
+                            </span>
+                          </td>
+                          <td>
+                            <div class="dict-primary">{{ row.name }}</div>
+                            <div class="dict-secondary">{{ row.patterns }}</div>
+                          </td>
+                          <td class="dict-note">{{ row.note }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="doc-card">
+                <div class="card-heading">
+                  <span class="card-icon-badge" aria-hidden="true">
+                    <hugeicons-icon
+                      [icon]="Layers01Icon"
+                      [size]="17"
+                      [strokeWidth]="2"
+                      color="#4f46e5"
+                    ></hugeicons-icon>
+                  </span>
+                  <div>
+                    <span class="card-eyebrow">Orden de Prioridad</span>
+                    <h3 class="card-title">Tipos de Compra e Indicadores</h3>
+                  </div>
+                </div>
+
+                <div class="table-wrap">
+                  <table class="dict-table">
+                    <thead>
+                      <tr>
+                        <th>Prioridad</th>
+                        <th>Tipo</th>
+                        <th>Patrones / Indicador</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of buyTypeDictionary; track row.buyType) {
+                        <tr>
+                          <td class="tabular">
+                            <span class="priority-pill">#{{ row.priority }}</span>
+                          </td>
+                          <td>
+                            <span class="code-badge">{{ row.buyType }}</span>
+                          </td>
+                          <td>
+                            <div class="dict-primary">{{ row.kpiFocus }}</div>
+                            <div class="dict-secondary">{{ row.patterns }}</div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <!-- Separación Automática DV360 -->
+            <article class="doc-card">
+              <div class="card-heading">
+                <span class="card-icon-badge" aria-hidden="true">
+                  <hugeicons-icon
+                    [icon]="Shield01Icon"
+                    [size]="17"
+                    [strokeWidth]="2"
+                    color="#4f46e5"
+                  ></hugeicons-icon>
+                </span>
+                <div>
+                  <span class="card-eyebrow">Regla de Negocio DV360</span>
+                  <h3 class="card-title">Separación Automática de DV360: YouTube vs. Display</h3>
+                </div>
+              </div>
+              <p class="card-text">
+                Al importar un archivo crudo de <strong>DV360</strong>, el lector inspecciona
+                <em>Campaign</em> e <em>Insertion Order</em> y separa automáticamente cada línea en
+                el canal correspondiente según el formato detectado:
+              </p>
+
+              <div class="two-col-grid">
+                <div class="dv360-group dv360-group--youtube">
+                  <div class="dv360-group-header">
+                    <span class="dv360-dot dv360-dot--youtube" aria-hidden="true"></span>
+                    <strong>YouTube (5 formatos)</strong>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="dict-table">
+                      <thead>
+                        <tr>
+                          <th>Formato</th>
+                          <th>Código detectado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (fmt of dv360YoutubeFormats; track fmt.formato) {
+                          <tr>
+                            <td>
+                              <span class="format-cell">
+                                <hugeicons-icon
+                                  [icon]="Tick02Icon"
+                                  [size]="13"
+                                  [strokeWidth]="2.3"
+                                  color="#dc2626"
+                                ></hugeicons-icon>
+                                <strong>{{ fmt.formato }}</strong>
+                              </span>
+                            </td>
+                            <td>
+                              <span class="tag-pill">{{ fmt.keywords }}</span>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="dv360-group dv360-group--display">
+                  <div class="dv360-group-header">
+                    <span class="dv360-dot dv360-dot--display" aria-hidden="true"></span>
+                    <strong>Display (3 formatos)</strong>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="dict-table">
+                      <thead>
+                        <tr>
+                          <th>Formato</th>
+                          <th>Código detectado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (fmt of dv360DisplayFormats; track fmt.formato) {
+                          <tr>
+                            <td>
+                              <span class="format-cell">
+                                <hugeicons-icon
+                                  [icon]="Tick02Icon"
+                                  [size]="13"
+                                  [strokeWidth]="2.3"
+                                  color="#0284c7"
+                                ></hugeicons-icon>
+                                <strong>{{ fmt.formato }}</strong>
+                              </span>
+                            </td>
+                            <td>
+                              <span class="tag-pill">{{ fmt.keywords }}</span>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <footer class="modal-footer">
+        <span class="footer-hint">
+          <hugeicons-icon
+            [icon]="InformationCircleIcon"
+            [size]="15"
+            [strokeWidth]="2"
+            color="#64748b"
+          ></hugeicons-icon>
+          <span>Presiona Esc o haz clic fuera del diálogo para cerrar</span>
+        </span>
+        <button type="button" class="btn-primary-close" (click)="handleClose()">
+          <hugeicons-icon [icon]="Tick02Icon" [size]="15" [strokeWidth]="2.2"></hugeicons-icon>
+          <span>Entendido / Cerrar</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+}
